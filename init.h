@@ -3757,7 +3757,7 @@ struct option_t MuttVars[] = {
   ** URL. You should only unset this for particular known hosts, using
   ** the \fC$<account-hook>\fP function.
   */
-  { "ssl_ciphers", DT_STR, R_NONE, UL &SslCiphers, UL 0 },
+  { "ssl_ciphers", DT_STR, R_NONE, UL &SslCiphers, UL "@SYSTEM" },
   /*
   ** .pp
   ** Contains a colon-seperated list of ciphers to use when using SSL.
