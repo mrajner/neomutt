@@ -79,6 +79,8 @@ int _mutt_traverse_thread (CONTEXT *ctx, HEADER *hdr, int flag);
 
 typedef const char * format_t (char *, size_t, size_t, int, char, const char *, const char *, const char *, const char *, unsigned long, format_flag);
 
+typedef int enter_string_t (ENTER_STATE *state, const char *pattern);
+
 void mutt_FormatString (char *, size_t, size_t, int, const char *, format_t *, unsigned long, format_flag);
 void mutt_parse_content_type (char *, BODY *);
 void mutt_generate_boundary (PARAMETER **);
@@ -333,7 +335,8 @@ int mutt_compose_to_sender (HEADER *);
 
 int _mutt_enter_fname (const char *, char *, size_t, int *, int, int, char ***, int *, int);
 int  mutt_enter_string (char *buf, size_t buflen, int col, int flags);
-int _mutt_enter_string (char *, size_t, int, int, int, char ***, int *, ENTER_STATE *);
+int _mutt_enter_string (char *, size_t, int, int, int, char ***, int *, ENTER_STATE *, enter_string_t *);
+int mutt_string_matcher (char *buf, size_t buflen, int col, int flags, enter_string_t *callback);
 #define mutt_get_field(A,B,C,D) _mutt_get_field(A,B,C,D,0,NULL,NULL)
 int _mutt_get_field (const char *, char *, size_t, int, int, char ***, int *);
 int mutt_get_hook_type (const char *);
