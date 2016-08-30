@@ -26,6 +26,37 @@
 #include "mutt.h"
 #include "globals.h"
 
+/* The function we'll call from the lua script */
+int
+average (lua_State *l)
+{
+  /* get number of arguments */
+  int n = lua_gettop (l);
+  int sum = 0;
+  int i;
+
+  /* loop through each argument */
+  for (i = 1; i <= n; i++)
+  {
+#if LUA_VERSION_NUM >= 503
+    if (!lua_isinteger (l, i))
+    {
+      lua_pushstring (l, "Incorrect argument to 'average'");
+      lua_error (l);
+    }
+#endif
+
+    /* total the arguments */
+    sum += lua_tointeger (l, i);
+  }
+
+  /* push the average */
+  lua_pushinteger (l, sum / n);
+
+  /* return the number of results */
+  return 1;
+}
+
 int
 get_lua_integer (lua_State *l, const char *name)
 {
@@ -58,6 +89,9 @@ lua_test (void)
 
   /* load Lua base libraries */
   luaL_openlibs (l);
+
+  /* register our function */
+  lua_register (l, "average", average);
 
   /* set some default values */
   lua_pushinteger (l, 15); lua_setglobal (l, "apple");
