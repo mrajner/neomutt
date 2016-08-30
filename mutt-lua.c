@@ -27,6 +27,23 @@
 #include "globals.h"
 
 int
+get_lua_integer (lua_State *l, const char *name)
+{
+  if (!name)
+    return -1;
+
+  /* lookup the name and put it on the stack */
+  lua_getglobal (l, name);
+  if (!lua_isnumber (l, -1))
+    return -1;
+
+  int ret = lua_tonumber (l, -1);
+  lua_pop (l, 1);
+
+  return ret;
+}
+
+int
 lua_test (void)
 {
   lua_State *l;
@@ -42,12 +59,26 @@ lua_test (void)
   /* load Lua base libraries */
   luaL_openlibs (l);
 
+  /* set some default values */
+  lua_pushinteger (l, 15); lua_setglobal (l, "apple");
+  lua_pushinteger (l, 27); lua_setglobal (l, "banana");
+  lua_pushinteger (l, 39); lua_setglobal (l, "cherry");
+
   if (luaL_dofile (l, LuaScript) == 0)
   {
+    /* retrieve the values */
+    mutt_message ("apple  = %d", get_lua_integer (l, "apple"));  mutt_sleep(1);
+    mutt_message ("banana = %d", get_lua_integer (l, "banana")); mutt_sleep(1);
+    mutt_message ("cherry = %d", get_lua_integer (l, "cherry")); mutt_sleep(1);
+
     /* one value on the stack */
     if (lua_gettop (l) == 1)
     {
       mutt_message ("lua returned: %lld", lua_tointeger (l, 1));
+    }
+    else
+    {
+      mutt_message ("lua returned");
     }
   }
   else
