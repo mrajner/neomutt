@@ -18,4 +18,6 @@
 #ifndef _MUTT_LUA_H_
 #define _MUTT_LUA_H_
 
+int lua_test (void);
+
 #endif /* _MUTT_LUA_H_ */

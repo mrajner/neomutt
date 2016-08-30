@@ -23,3 +23,41 @@
 #include <lualib.h>
 #include <lauxlib.h>
 
+#include "mutt.h"
+#include "globals.h"
+
+int
+lua_test (void)
+{
+  lua_State *l;
+
+  if (!LuaScript)
+    return 0;
+
+  /* initialise Lua */
+  l = luaL_newstate();
+  if (!l)
+    return 0;
+
+  /* load Lua base libraries */
+  luaL_openlibs (l);
+
+  if (luaL_dofile (l, LuaScript) == 0)
+  {
+    /* one value on the stack */
+    if (lua_gettop (l) == 1)
+    {
+      mutt_message ("lua returned: %lld", lua_tointeger (l, 1));
+    }
+  }
+  else
+  {
+    mutt_error ("error running lua script");
+  }
+
+  /* cleanup Lua */
+  lua_close (l);
+
+  return 1;
+}
+
