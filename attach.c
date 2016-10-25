@@ -411,6 +411,7 @@ int mutt_view_attachment (FILE *fp, BODY *a, int flag, HEADER *hdr,
     if (rfc1524_expand_filename (entry->nametemplate, fname,
           tempfile, sizeof (tempfile)))
     {
+      dprint(1, (debugfile, "nametemplate: %s, fname: %s, expanded filename: %s\n", entry->nametemplate, fname, tempfile));
       if (fp == NULL && mutt_strcmp(tempfile, a->filename))
       {
         /* send case: the file is already there */
