@@ -1,28 +1,28 @@
 /*
  * Copyright (C) 1996-2000,2003,2012 Michael R. Elkins <me@mutt.org>
- * 
+ *
  *     This program is free software; you can redistribute it and/or modify
  *     it under the terms of the GNU General Public License as published by
  *     the Free Software Foundation; either version 2 of the License, or
  *     (at your option) any later version.
- * 
+ *
  *     This program is distributed in the hope that it will be useful,
  *     but WITHOUT ANY WARRANTY; without even the implied warranty of
  *     MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  *     GNU General Public License for more details.
- * 
+ *
  *     You should have received a copy of the GNU General Public License
  *     along with this program; if not, write to the Free Software
  *     Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
- */ 
+ */
 
-/* 
+/*
  * rfc1524 defines a format for the Multimedia Mail Configuration, which
- * is the standard mailcap file format under Unix which specifies what 
+ * is the standard mailcap file format under Unix which specifies what
  * external programs should be used to view/compose/edit multimedia files
  * based on content type.
  *
- * This file contains various functions for implementing a fair subset of 
+ * This file contains various functions for implementing a fair subset of
  * rfc1524.
  */
 
@@ -62,9 +62,9 @@ int rfc1524_expand_command (BODY *a, char *filename, char *_type,
   int needspipe = TRUE;
   char buf[LONG_STRING];
   char type[LONG_STRING];
-  
+
   strfcpy (type, _type, sizeof (type));
-  
+
   if (option (OPTMAILCAPSANITIZE))
     mutt_sanitize_filename (type, 0);
 
@@ -75,36 +75,36 @@ int rfc1524_expand_command (BODY *a, char *filename, char *_type,
       x++;
       buf[y++] = command[x++];
     }
-    else if (command[x] == '%') 
+    else if (command[x] == '%')
     {
       x++;
-      if (command[x] == '{') 
+      if (command[x] == '{')
       {
-	char param[STRING];
-	char pvalue[STRING];
-	char *_pvalue;
-	int z = 0;
+        char param[STRING];
+        char pvalue[STRING];
+        char *_pvalue;
+        int z = 0;
 
-	x++;
-	while (command[x] && command[x] != '}' && z < sizeof (param) - 1)
-	  param[z++] = command[x++];
-	param[z] = '\0';
-	
-	_pvalue = mutt_get_parameter (param, a->parameter);
-	strfcpy (pvalue, NONULL(_pvalue), sizeof (pvalue));
-	if (option (OPTMAILCAPSANITIZE))
-	  mutt_sanitize_filename (pvalue, 0);
-	
-	y += mutt_quote_filename (buf + y, sizeof (buf) - y, pvalue);
+        x++;
+        while (command[x] && command[x] != '}' && z < sizeof (param) - 1)
+          param[z++] = command[x++];
+        param[z] = '\0';
+
+        _pvalue = mutt_get_parameter (param, a->parameter);
+        strfcpy (pvalue, NONULL(_pvalue), sizeof (pvalue));
+        if (option (OPTMAILCAPSANITIZE))
+          mutt_sanitize_filename (pvalue, 0);
+
+        y += mutt_quote_filename (buf + y, sizeof (buf) - y, pvalue);
       }
       else if (command[x] == 's' && filename != NULL)
       {
-	y += mutt_quote_filename (buf + y, sizeof (buf) - y, filename);
-	needspipe = FALSE;
+        y += mutt_quote_filename (buf + y, sizeof (buf) - y, filename);
+        needspipe = FALSE;
       }
       else if (command[x] == 't')
       {
-	y += mutt_quote_filename (buf + y, sizeof (buf) - y, type);
+        y += mutt_quote_filename (buf + y, sizeof (buf) - y, type);
       }
       x++;
     }
@@ -159,7 +159,7 @@ static int get_field_text (char *field, char **entry,
     }
     return 1;
   }
-  else 
+  else
   {
     mutt_error (_("Improperly formatted entry for type %s in \"%s\" line %d"),
 		type, filename, line);
@@ -167,11 +167,7 @@ static int get_field_text (char *field, char **entry,
   }
 }
 
-static int rfc1524_mailcap_parse (BODY *a,
-				  char *filename,
-				  char *type, 
-				  rfc1524_entry *entry,
-				  int opt)
+static int rfc1524_mailcap_parse (BODY *a, char *filename, char *type, rfc1524_entry *entry, int opt)
 {
   FILE *fp;
   char *buf = NULL;
@@ -208,22 +204,22 @@ static int rfc1524_mailcap_parse (BODY *a,
     {
       /* ignore comments */
       if (*buf == '#')
-	continue;
+        continue;
       dprint (2, (debugfile, "mailcap entry: %s\n", buf));
 
       /* check type */
       ch = get_field (buf);
       if (ascii_strcasecmp (buf, type) &&
-	  (ascii_strncasecmp (buf, type, btlen) ||
-	   (buf[btlen] != 0 &&			/* implicit wild */
-	    mutt_strcmp (buf + btlen, "/*"))))	/* wildsubtype */
-	continue;
+          (ascii_strncasecmp (buf, type, btlen) ||
+           (buf[btlen] != 0 &&			/* implicit wild */
+            mutt_strcmp (buf + btlen, "/*"))))	/* wildsubtype */
+        continue;
 
       /* next field is the viewcommand */
       field = ch;
       ch = get_field (ch);
       if (entry)
-	entry->command = safe_strdup (field);
+        entry->command = safe_strdup (field);
 
       /* parse the optional fields */
       found = TRUE;
@@ -234,117 +230,117 @@ static int rfc1524_mailcap_parse (BODY *a,
 
       while (ch)
       {
-	field = ch;
-	ch = get_field (ch);
-	dprint (2, (debugfile, "field: %s\n", field));
+        field = ch;
+        ch = get_field (ch);
+        dprint (2, (debugfile, "field: %s\n", field));
 
-	if (!ascii_strcasecmp (field, "needsterminal"))
-	{
-	  if (entry)
-	    entry->needsterminal = TRUE;
-	}
-	else if (!ascii_strcasecmp (field, "copiousoutput"))
-	{
-	  copiousoutput = TRUE;
-	  if (entry)
-	    entry->copiousoutput = TRUE;
-	}
-	else if (!ascii_strncasecmp (field, "composetyped", 12))
-	{
-	  /* this compare most occur before compose to match correctly */
-	  if (get_field_text (field + 12, entry ? &entry->composetypecommand : NULL,
-			      type, filename, line))
-	    composecommand = TRUE;
-	}
-	else if (!ascii_strncasecmp (field, "compose", 7))
-	{
-	  if (get_field_text (field + 7, entry ? &entry->composecommand : NULL,
-			      type, filename, line))
-	    composecommand = TRUE;
-	}
-	else if (!ascii_strncasecmp (field, "print", 5))
-	{
-	  if (get_field_text (field + 5, entry ? &entry->printcommand : NULL,
-			      type, filename, line))
-	    printcommand = TRUE;
-	}
-	else if (!ascii_strncasecmp (field, "edit", 4))
-	{
-	  if (get_field_text (field + 4, entry ? &entry->editcommand : NULL,
-			      type, filename, line))
-	    editcommand = TRUE;
-	}
-	else if (!ascii_strncasecmp (field, "nametemplate", 12))
-	{
-	  get_field_text (field + 12, entry ? &entry->nametemplate : NULL,
-			  type, filename, line);
-	}
-	else if (!ascii_strncasecmp (field, "x-convert", 9))
-	{
-	  get_field_text (field + 9, entry ? &entry->convert : NULL,
-			  type, filename, line);
-	}
-	else if (!ascii_strncasecmp (field, "test", 4))
-	{
-	  /* 
-	   * This routine executes the given test command to determine
-	   * if this is the right entry.
-	   */
-	  char *test_command = NULL;
-	  size_t len;
+        if (!ascii_strcasecmp (field, "needsterminal"))
+        {
+          if (entry)
+            entry->needsterminal = TRUE;
+        }
+        else if (!ascii_strcasecmp (field, "copiousoutput"))
+        {
+          copiousoutput = TRUE;
+          if (entry)
+            entry->copiousoutput = TRUE;
+        }
+        else if (!ascii_strncasecmp (field, "composetyped", 12))
+        {
+          /* this compare most occur before compose to match correctly */
+          if (get_field_text (field + 12, entry ? &entry->composetypecommand : NULL,
+                type, filename, line))
+            composecommand = TRUE;
+        }
+        else if (!ascii_strncasecmp (field, "compose", 7))
+        {
+          if (get_field_text (field + 7, entry ? &entry->composecommand : NULL,
+                type, filename, line))
+            composecommand = TRUE;
+        }
+        else if (!ascii_strncasecmp (field, "print", 5))
+        {
+          if (get_field_text (field + 5, entry ? &entry->printcommand : NULL,
+                type, filename, line))
+            printcommand = TRUE;
+        }
+        else if (!ascii_strncasecmp (field, "edit", 4))
+        {
+          if (get_field_text (field + 4, entry ? &entry->editcommand : NULL,
+                type, filename, line))
+            editcommand = TRUE;
+        }
+        else if (!ascii_strncasecmp (field, "nametemplate", 12))
+        {
+          get_field_text (field + 12, entry ? &entry->nametemplate : NULL,
+              type, filename, line);
+        }
+        else if (!ascii_strncasecmp (field, "x-convert", 9))
+        {
+          get_field_text (field + 9, entry ? &entry->convert : NULL,
+              type, filename, line);
+        }
+        else if (!ascii_strncasecmp (field, "test", 4))
+        {
+          /*
+           * This routine executes the given test command to determine
+           * if this is the right entry.
+           */
+          char *test_command = NULL;
+          size_t len;
 
-	  if (get_field_text (field + 4, &test_command, type, filename, line)
-	      && test_command)
-	  {
-	    len = mutt_strlen (test_command) + STRING;
-	    safe_realloc (&test_command, len);
-	    rfc1524_expand_command (a, a->filename, type, test_command, len);
-	    if (mutt_system (test_command))
-	    {
-	      /* a non-zero exit code means test failed */
-	      found = FALSE;
-	    }
-	    FREE (&test_command);
-	  }
-	}
+          if (get_field_text (field + 4, &test_command, type, filename, line)
+              && test_command)
+          {
+            len = mutt_strlen (test_command) + STRING;
+            safe_realloc (&test_command, len);
+            rfc1524_expand_command (a, a->filename, type, test_command, len);
+            if (mutt_system (test_command))
+            {
+              /* a non-zero exit code means test failed */
+              found = FALSE;
+            }
+            FREE (&test_command);
+          }
+        }
       } /* while (ch) */
 
       if (opt == MUTT_AUTOVIEW)
       {
-	if (!copiousoutput)
-	  found = FALSE;
+        if (!copiousoutput)
+          found = FALSE;
       }
       else if (opt == MUTT_COMPOSE)
       {
-	if (!composecommand)
-	  found = FALSE;
+        if (!composecommand)
+          found = FALSE;
       }
       else if (opt == MUTT_EDIT)
       {
-	if (!editcommand)
-	  found = FALSE;
+        if (!editcommand)
+          found = FALSE;
       }
       else if (opt == MUTT_PRINT)
       {
-	if (!printcommand)
-	  found = FALSE;
+        if (!printcommand)
+          found = FALSE;
       }
-      
+
       if (!found)
       {
-	/* reset */
-	if (entry)
-	{
-	  FREE (&entry->command);
-	  FREE (&entry->composecommand);
-	  FREE (&entry->composetypecommand);
-	  FREE (&entry->editcommand);
-	  FREE (&entry->printcommand);
-	  FREE (&entry->nametemplate);
-	  FREE (&entry->convert);
-	  entry->needsterminal = 0;
-	  entry->copiousoutput = 0;
-	}
+        /* reset */
+        if (entry)
+        {
+          FREE (&entry->command);
+          FREE (&entry->composecommand);
+          FREE (&entry->composetypecommand);
+          FREE (&entry->editcommand);
+          FREE (&entry->printcommand);
+          FREE (&entry->nametemplate);
+          FREE (&entry->convert);
+          entry->needsterminal = 0;
+          entry->copiousoutput = 0;
+        }
       }
     } /* while (!found && (buf = mutt_read_line ())) */
     safe_fclose (&fp);
@@ -353,11 +349,19 @@ static int rfc1524_mailcap_parse (BODY *a,
   return found;
 }
 
+/** Allocate memory for a new rfc1524 entry
+ *
+ * @returns a pointer to an un-initialized rfc1524_entry
+ */
 rfc1524_entry *rfc1524_new_entry(void)
 {
   return (rfc1524_entry *)safe_calloc(1, sizeof(rfc1524_entry));
 }
 
+/** Deallocate an rfc1524_entry.
+ *
+ * @param entry the rfc1524_entry to deallocate.
+ */
 void rfc1524_free_entry(rfc1524_entry **entry)
 {
   rfc1524_entry *p = *entry;
@@ -381,8 +385,9 @@ void rfc1524_free_entry(rfc1524_entry **entry)
  *
  * rfc1524_mailcap_lookup attempts to find the given type in the
  * list of mailcap files.
+ *
  * @returns
- * - 1 on success and stores entry information in *entry if it is not NULL.
+ * - 1 on success. If *entry is not NULL it poplates it with the mailcap entry.
  * - 0 if no matching entry is found.
  */
 int rfc1524_mailcap_lookup (BODY *a, char *type, rfc1524_entry *entry, int opt)
@@ -393,7 +398,7 @@ int rfc1524_mailcap_lookup (BODY *a, char *type, rfc1524_entry *entry, int opt)
   char *curr = MailcapPath;
 
   /* rfc1524 specifies that a path of mailcap files should be searched.
-   * joy.  They say 
+   * joy.  They say
    * $HOME/.mailcap:/etc/mailcap:/usr/etc/mailcap:/usr/local/etc/mailcap, etc
    * and overridden by the MAILCAPS environment variable, and, just to be nice,
    * we'll make it specifiable in .muttrc
@@ -419,7 +424,7 @@ int rfc1524_mailcap_lookup (BODY *a, char *type, rfc1524_entry *entry, int opt)
 
     if (!x)
       continue;
-    
+
     path[x] = '\0';
     mutt_expand_path (path, sizeof (path));
 
@@ -436,12 +441,12 @@ int rfc1524_mailcap_lookup (BODY *a, char *type, rfc1524_entry *entry, int opt)
 
 /* This routine will create a _temporary_ filename matching the
  * name template given if this needs to be done.
- * 
+ *
  * Please note that only the last path element of the
  * template and/or the old file name will be used for the
- * comparison and the temporary file name.
- * 
- * Returns 0 if oldfile is fine as is.
+ * comparison and the temporary file name
+ *
+ * Returns 0 if oldfile is fine as is
  * Returns 1 if newfile specified
  */
 
@@ -452,15 +457,24 @@ static void strnfcpy(char *d, char *s, size_t siz, size_t len)
   strfcpy(d, s, len);
 }
 
-/** Expand filename
+/** Expand a new filename from a template or existing filename.
  *
  * @param nametemplate the filename template
  * @param oldfile
- * @param newfile the string to copy the new filename into.
- * @param nflen the maximum length of the new filename.
+ * @param newfile the string to copy the new filename into
+ * @param nflen the maximum length of the new filename
+ *
+ * If there is no nametemplate, the stripped oldfile name is used as the template for newfile.
+ *
+ * If there is no oldfile, the stripped nametemplate name is used as the template for newfile.
+ *
+ * If both a nametemplate and oldfile are specified, the template is checked for a "%s". If none is found, the
+ * nametemplate is used as the template for newfile.
+ * The first path component of the nametemplate and oldfile are ignored.
  *
  * @returns
- * - 
+ * - 0 if the left and right components of the oldfile and newfile match.
+ * - 1 otherwise.
  */
 int rfc1524_expand_filename (char *nametemplate,
     char *oldfile,
@@ -469,7 +483,7 @@ int rfc1524_expand_filename (char *nametemplate,
 {
   int i, j, k, ps;
   char *s;
-  short lmatch = 0, rmatch = 0; 
+  short lmatch = 0, rmatch = 0;
   char left[_POSIX_PATH_MAX];
   char right[_POSIX_PATH_MAX];
 
@@ -496,7 +510,7 @@ int rfc1524_expand_filename (char *nametemplate,
   else /* oldfile && nametemplate */
   {
 
-    /* first, compare everything left from the "%s" 
+    /* first, compare everything left from the "%s"
      * (if there is one).
      */
 
@@ -504,7 +518,7 @@ int rfc1524_expand_filename (char *nametemplate,
     for(i = 0; nametemplate[i]; i++)
     {
       if(nametemplate[i] == '%' && nametemplate[i+1] == 's')
-      { 
+      {
         ps = 1;
         break;
       }
@@ -520,14 +534,14 @@ int rfc1524_expand_filename (char *nametemplate,
 
       /* If we had a "%s", check the rest. */
 
-      /* now, for the right part: compare everything right from 
+      /* now, for the right part: compare everything right from
        * the "%s" to the final part of oldfile.
-       * 
+       *
        * The logic here is as follows:
-       * 
+       *
        * - We start reading from the end.
        * - There must be a match _right_ from the "%s",
-       *   thus the i + 2.  
+       *   thus the i + 2.
        * - If there was a left hand match, this stuff
        *   must not be counted again.  That's done by the
        *   condition (j >= (lmatch ? i : 0)).
@@ -570,9 +584,8 @@ int rfc1524_expand_filename (char *nametemplate,
 
   if(rmatch && lmatch)
     return 0;
-  else 
+  else
     return 1;
-
 }
 
 /* If rfc1524_expand_command() is used on a recv'd message, then

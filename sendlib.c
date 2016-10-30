@@ -937,13 +937,17 @@ CONTENT *mutt_get_content_info (const char *fname, BODY *b)
   return info;
 }
 
-/* Given a file with path ``s'', see if there is a registered MIME type.
- * returns the major MIME type, and copies the subtype to ``d''.  First look
+/** Look up mime type information
+ *
+ * @param att the attachment body to update with a matching type
+ * @param path the filename path to use to match a mime type
+ *
+ * Given a file at `path`, see if there is a registered MIME type.
+ * Returns the major MIME type, and copies the subtype to ``d''.  First look
  * for ~/.mime.types, then look in a system mime.types if we can find one.
  * The longest match is used so that we can match `ps.gz' when `gz' also
  * exists.
  */
-
 int mutt_lookup_mime_type (BODY *att, const char *path)
 {
   FILE *f;
@@ -970,72 +974,72 @@ int mutt_lookup_mime_type (BODY *att, const char *path)
     switch (count)
     {
       case 0:
-	snprintf (buf, sizeof (buf), "%s/.mime.types", NONULL(Homedir));
-	break;
+        snprintf (buf, sizeof (buf), "%s/.mime.types", NONULL(Homedir));
+        break;
       case 1:
-	strfcpy (buf, SYSCONFDIR"/mime.types", sizeof(buf));
-	break;
+        strfcpy (buf, SYSCONFDIR"/mime.types", sizeof(buf));
+        break;
       case 2:
-	strfcpy (buf, PKGDATADIR"/mime.types", sizeof (buf));
-	break;
+        strfcpy (buf, PKGDATADIR"/mime.types", sizeof (buf));
+        break;
       default:
         dprint (1, (debugfile, "mutt_lookup_mime_type: Internal error, count = %d.\n", count));
-	goto bye;	/* shouldn't happen */
+        goto bye;	/* shouldn't happen */
     }
 
     if ((f = fopen (buf, "r")) != NULL)
     {
       while (fgets (buf, sizeof (buf) - 1, f) != NULL)
       {
-	/* weed out any comments */
-	if ((p = strchr (buf, '#')))
-	  *p = 0;
+        /* weed out any comments */
+        if ((p = strchr (buf, '#')))
+          *p = 0;
 
-	/* remove any leading space. */
-	ct = buf;
-	SKIPWS (ct);
+        /* remove any leading space. */
+        ct = buf;
+        SKIPWS (ct);
 
-	/* position on the next field in this line */
-	if ((p = strpbrk (ct, " \t")) == NULL)
-	  continue;
-	*p++ = 0;
-	SKIPWS (p);
+        /* position on the next field in this line */
+        if ((p = strpbrk (ct, " \t")) == NULL)
+          continue;
+        *p++ = 0;
+        SKIPWS (p);
 
-	/* cycle through the file extensions */
-	while ((p = strtok (p, " \t\n")))
-	{
-	  sze = mutt_strlen (p);
-	  if ((sze > cur_sze) && (szf >= sze) &&
-	      (mutt_strcasecmp (path + szf - sze, p) == 0 || ascii_strcasecmp (path + szf - sze, p) == 0) &&
-	      (szf == sze || path[szf - sze - 1] == '.'))
-	  {
-	    /* get the content-type */
+        /* cycle through the file extensions */
+        while ((p = strtok (p, " \t\n")))
+        {
+          sze = mutt_strlen (p);
+          if ((sze > cur_sze) && (szf >= sze) &&
+              (mutt_strcasecmp (path + szf - sze, p) == 0 || ascii_strcasecmp (path + szf - sze, p) == 0) &&
+              (szf == sze || path[szf - sze - 1] == '.'))
+          {
+            /* get the content-type */
 
-	    if ((p = strchr (ct, '/')) == NULL)
-	    {
-	      /* malformed line, just skip it. */
-	      break;
-	    }
-	    *p++ = 0;
+            if ((p = strchr (ct, '/')) == NULL)
+            {
+              /* malformed line, just skip it. */
+              break;
+            }
+            *p++ = 0;
 
-	    for (q = p; *q && !ISSPACE (*q); q++)
-	      ;
+            for (q = p; *q && !ISSPACE (*q); q++)
+              ;
 
-	    mutt_substrcpy (subtype, p, q, sizeof (subtype));
+            mutt_substrcpy (subtype, p, q, sizeof (subtype));
 
-	    if ((type = mutt_check_mime_type (ct)) == TYPEOTHER)
-	      strfcpy (xtype, ct, sizeof (xtype));
+            if ((type = mutt_check_mime_type (ct)) == TYPEOTHER)
+              strfcpy (xtype, ct, sizeof (xtype));
 
-	    cur_sze = sze;
-	  }
-	  p = NULL;
-	}
+            cur_sze = sze;
+          }
+          p = NULL;
+        }
       }
       safe_fclose (&f);
     }
   }
 
- bye:
+bye:
 
   if (type != TYPEOTHER || *xtype != '\0')
   {

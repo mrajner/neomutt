@@ -293,6 +293,11 @@ int mutt_edit_attachment (BODY *a)
 }
 
 
+/**
+ * @param b message attachment body
+ * @param type the mime type of the attachment in "type/subtype" format
+ * @param len
+ */
 void mutt_check_lookup_list (BODY *b, char *type, int len)
 {
   LIST *t = MimeLookupList;
@@ -339,6 +344,7 @@ void mutt_check_lookup_list (BODY *b, char *type, int len)
  * @param idxlen: YYY
 
  * Display a message attachment using the viewer program configured in mailcap.
+ * If there is no mailcap entry for a file type, view the image as text.
  * Viewer processes are opened and waited on synchronously so viewing an
  * attachment this way will block the main mutt process until the viewer process
  * exits.
@@ -375,7 +381,7 @@ int mutt_view_attachment (FILE *fp, BODY *a, int flag, HEADER *hdr,
 
   if (use_mailcap)
   {
-    entry = rfc1524_new_entry (); 
+    entry = rfc1524_new_entry ();
     if (!rfc1524_mailcap_lookup (a, type, entry, 0))
     {
       if (flag == MUTT_REGULAR)
