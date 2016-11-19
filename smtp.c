@@ -34,6 +34,8 @@
 
 #include <sasl/sasl.h>
 #include <sasl/saslutil.h>
+#else
+#include "mutt_sasl_plain.h"
 #endif
 
 #include <netdb.h>
@@ -69,6 +71,8 @@ enum {
 #ifdef USE_SASL
 static int smtp_auth (CONNECTION* conn);
 static int smtp_auth_sasl (CONNECTION* conn, const char* mechanisms);
+#else
+static int smtp_auth_plain (CONNECTION* conn);
 #endif
 
 static int smtp_fill_account (ACCOUNT* account);
@@ -498,9 +502,7 @@ static int smtp_open (CONNECTION* conn)
 #ifdef USE_SASL
     return smtp_auth (conn);
 #else
-    mutt_error (_("SMTP authentication requires SASL"));
-    mutt_sleep (1);
-    return -1;
+    return smtp_auth_plain (conn);
 #endif /* USE_SASL */
   }
 
@@ -661,5 +663,34 @@ fail:
   sasl_dispose (&saslconn);
   FREE (&buf);
   return SMTP_AUTH_FAIL;
+}
+#else /* USE_SASL */
+
+static int smtp_auth_plain (CONNECTION* conn)
+{
+  char buf[LONG_STRING];
+  size_t len;
+  int rc = -1;
+
+  if (mutt_account_getuser (&conn->account) ||
+      mutt_account_getpass (&conn->account))
+      goto end;
+
+  len = mutt_sasl_plain_msg (buf, sizeof (buf), "AUTH PLAIN",
+      conn->account.user, conn->account.user, conn->account.pass);
+  if (len > sizeof (buf) - 3)
+      goto end;
+  snprintf (buf + len, sizeof (buf) - len, "\r\n");
+
+  if (mutt_socket_write (conn, buf) < 0)
+    goto end;
+
+  if (smtp_get_resp (conn) == 0)
+      return 0;
+
+end:
+    mutt_error (_("SASL authentication failed"));
+    mutt_sleep (1);
+    return rc;
 }
 #endif /* USE_SASL */

@@ -24,16 +24,14 @@
 #endif
 
 #include "mutt.h"
+#include "mutt_sasl_plain.h"
 #include "imap_private.h"
 #include "auth.h"
 
 /* imap_auth_plain: SASL PLAIN support */
 imap_auth_res_t imap_auth_plain (IMAP_DATA* idata, const char* method)
 {
-  char auth[STRING];
   char buf[STRING];
-  size_t authlen;
-  size_t buflen;
 
   if (mutt_account_getuser (&idata->conn->account))
     return IMAP_AUTH_FAILURE;
@@ -42,13 +40,9 @@ imap_auth_res_t imap_auth_plain (IMAP_DATA* idata, const char* method)
 
   mutt_message _("Logging in...");
 
-  authlen = snprintf (auth, sizeof (auth), "%s%c%s%c%s",
-      idata->conn->account.user, '\0', idata->conn->account.user, '\0',
-      idata->conn->account.pass);
-
-  buflen = snprintf (buf, sizeof (buf), "AUTHENTICATE PLAIN ");
-  mutt_to_base64 ((unsigned char *)buf+buflen, (unsigned char *)auth,
-      authlen, STRING-buflen);
+  mutt_sasl_plain_msg (buf, STRING, "AUTHENTICATE PLAIN",
+                       idata->conn->account.user, idata->conn->account.user,
+                       idata->conn->account.pass);
 
   if (!imap_exec (idata, buf, IMAP_CMD_FAIL_OK | IMAP_CMD_PASS))
   {
