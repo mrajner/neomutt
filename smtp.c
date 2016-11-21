@@ -684,7 +684,7 @@ static int smtp_auth_plain (CONNECTION* conn)
    * SmtpAuthenticators is "plain" */
   for (method = SmtpAuthenticators; (delim = strchr(method, ':')); method = delim + 1)
   {
-    if (ascii_strncasecmp(method, "plain", delim - method) == 0)
+    if (ascii_strncasecmp(method, "plain", 5) == 0)
       break;
   }
 
