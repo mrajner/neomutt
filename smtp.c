@@ -670,27 +670,51 @@ static int smtp_auth_plain (CONNECTION* conn)
 {
   char buf[LONG_STRING];
   size_t len;
-  int rc = -1;
+  char *method;
+  char *delim;
+
+  if (!SmtpAuthenticators || !*SmtpAuthenticators)
+  {
+    mutt_error (_("No authenticators available"));
+    mutt_sleep (1);
+    return -1;
+  }
+
+  /* Check if any elements (but the last, because of strchr) in
+   * SmtpAuthenticators is "plain" */
+  for (method = SmtpAuthenticators; (delim = strchr(method, ':')); method = delim + 1)
+  {
+    if (ascii_strncasecmp(method, "plain", delim - method) == 0)
+      break;
+  }
+
+  /* Check if "plain" is the last element in the list */
+  if (delim == NULL && ascii_strncasecmp(method, "plain", 5) != 0)
+  {
+    mutt_error (_("No authenticators available"));
+    mutt_sleep (1);
+    return -1;
+  }
 
   if (mutt_account_getuser (&conn->account) ||
       mutt_account_getpass (&conn->account))
-      goto end;
+    goto fail;
 
   len = mutt_sasl_plain_msg (buf, sizeof (buf), "AUTH PLAIN",
       conn->account.user, conn->account.user, conn->account.pass);
   if (len > sizeof (buf) - 3)
-      goto end;
+    goto fail;
   snprintf (buf + len, sizeof (buf) - len, "\r\n");
 
   if (mutt_socket_write (conn, buf) < 0)
-    goto end;
+    goto fail;
 
   if (smtp_get_resp (conn) == 0)
-      return 0;
+    return 0;
 
-end:
+fail:
     mutt_error (_("SASL authentication failed"));
     mutt_sleep (1);
-    return rc;
+    return -1;
 }
 #endif /* USE_SASL */
