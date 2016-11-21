@@ -670,30 +670,28 @@ static int smtp_auth_plain (CONNECTION* conn)
 {
   char buf[LONG_STRING];
   size_t len;
-  char *method;
-  char *delim;
+  const char *method;
+  const char *delim;
 
   if (!SmtpAuthenticators || !*SmtpAuthenticators)
   {
     mutt_error (_("No authenticators available"));
-    mutt_sleep (1);
-    return -1;
+    goto end;
   }
 
-  /* Check if any elements (but the last, because of strchr) in
-   * SmtpAuthenticators is "plain" */
-  for (method = SmtpAuthenticators; (delim = strchr(method, ':')); method = delim + 1)
+  /* Check if any elements in SmtpAuthenticators is "plain" */
+  for (method = delim = SmtpAuthenticators;
+       *delim && (delim = mutt_strchrnul(method, ':'));
+       method = delim + 1)
   {
     if (ascii_strncasecmp(method, "plain", 5) == 0)
       break;
   }
 
-  /* Check if "plain" is the last element in the list */
-  if (delim == NULL && ascii_strncasecmp(method, "plain", 5) != 0)
+  if (*delim == '\0')
   {
     mutt_error (_("No authenticators available"));
-    mutt_sleep (1);
-    return -1;
+    goto end;
   }
 
   if (mutt_account_getuser (&conn->account) ||
@@ -714,6 +712,8 @@ static int smtp_auth_plain (CONNECTION* conn)
 
 fail:
     mutt_error (_("SASL authentication failed"));
+
+end:
     mutt_sleep (1);
     return -1;
 }
