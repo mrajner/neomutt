@@ -8953,18 +8953,8 @@ please have a look at the mixmaster documentation.
   <sect2 id="attach-headers-color-support">
     <title>Support</title>
 
-    <para>
-      To check if NeoMutt supports <quote>attach-headers-color</quote>, look for
-      <quote>patch-attach-headers-color</quote> in the version info.
-      See: <xref linkend="mutt-patches"/>.
-    </para>
-
-    <itemizedlist>
-      <title>Dependencies:</title>
-      <listitem><para>mutt-1.7.1</para></listitem>
-    </itemizedlist>
-
-    <para>This feature is part of the <ulink url="https://www.neomutt.org/">NeoMutt Project</ulink>.</para>
+    <para><emphasis role="bold">Since:</emphasis> NeoMutt 2016-09-10</para>
+    <para><emphasis role="bold">Dependencies:</emphasis> None</para>
   </sect2>
 
   <sect2 id="attach-headers-color-intro">
@@ -9028,7 +9018,6 @@ color   attach_headers     brightmagenta   default        &quot;invalid node wit
     <title>See Also</title>
 
     <itemizedlist>
-      <listitem><para><ulink url="https://www.neomutt.org/">NeoMutt Project</ulink></para></listitem>
       <listitem><para><link linkend="color">Color command</link></para></listitem>
       <listitem><para><link linkend="regexp">Regular Expressions</link></para></listitem>
     </itemizedlist>
@@ -9054,18 +9043,8 @@ color   attach_headers     brightmagenta   default        &quot;invalid node wit
   <sect2 id="compose-to-sender-support">
     <title>Support</title>
 
-    <para>
-      To check if Mutt supports <quote>compose-to-sender</quote>, look for
-      <quote>patch-compose-to-sender</quote> in the mutt version.
-      See: <xref linkend="mutt-patches"/>.
-    </para>
-
-    <itemizedlist>
-      <title>Dependencies:</title>
-      <listitem><para>mutt-1.7.1</para></listitem>
-    </itemizedlist>
-
-    <para>This feature is part of the <ulink url="https://www.neomutt.org/">NeoMutt Project</ulink>.</para>
+    <para><emphasis role="bold">Since:</emphasis> NeoMutt 2016-10-02</para>
+    <para><emphasis role="bold">Dependencies:</emphasis> None</para>
   </sect2>
 
   <sect2 id="compose-to-sender-intro">
@@ -9149,18 +9128,8 @@ bind index,pager @ compose-to-sender
   <sect2 id="compress-support">
     <title>Support</title>
 
-    <para>
-      To check if NeoMutt supports <quote>Compress Folders</quote>, look for
-      <quote>+USE_COMPRESSED</quote> in the version info.
-      See: <xref linkend="compile-time-features"/>.
-    </para>
-
-    <itemizedlist>
-      <title>Dependencies:</title>
-      <listitem><para>mutt-1.7.1</para></listitem>
-    </itemizedlist>
-
-    <para>This feature is part of the <ulink url="https://www.neomutt.org/">NeoMutt Project</ulink>.</para>
+    <para><emphasis role="bold">Since:</emphasis> NeoMutt 2016-05-30</para>
+    <para><emphasis role="bold">Dependencies:</emphasis> None</para>
   </sect2>
 
   <sect2 id="compress-intro">
@@ -9298,9 +9267,9 @@ bind index,pager @ compose-to-sender
       </para>
 
       <sect4 id="compress-open-hook-example">
-        <title>Example of open-hook</title>
+        <title>Example of <literal>open-hook</literal></title>
 
-        <screen>open-hook '\.gz$' &quot;gzip -cd '%f' &gt; '%t'&quot;</screen>
+        <screen>open-hook '\.gz$' &quot;gzip --stdout --decompress '%f' &gt; '%t'&quot;</screen>
 
         <itemizedlist>
           <listitem><para>Mutt finds a file, <quote>example.gz</quote>,
@@ -9334,9 +9303,9 @@ bind index,pager @ compose-to-sender
       </note>
 
       <sect4 id="compress-close-hook-example">
-        <title>Example of close-hook</title>
+        <title>Example of <literal>close-hook</literal></title>
 
-        <screen>close-hook '\.gz$' &quot;gzip -c '%t' &gt; '%f'&quot;</screen>
+        <screen>close-hook '\.gz$' &quot;gzip --stdout '%t' &gt; '%f'&quot;</screen>
 
         <itemizedlist>
           <listitem><para>Mutt has finished with a folder, <quote>example.gz</quote>,
@@ -9347,6 +9316,13 @@ bind index,pager @ compose-to-sender
           <listitem><para>Mutt uses the command <literal>gzip -c</literal>
               to create a new compressed file</para></listitem>
         </itemizedlist>
+
+	<note>
+	  <para>
+	    The <literal>close-hook</literal> can also include extra options,
+	    e.g. compression level: <literal>--best</literal>
+	  </para>
+	</note>
       </sect4>
     </sect3>
 
@@ -9387,9 +9363,9 @@ bind index,pager @ compose-to-sender
       </note>
 
       <sect4 id="compress-append-hook-example">
-        <title>Example of append-hook</title>
+        <title>Example of <literal>append-hook</literal></title>
 
-        <screen>append-hook '\.gz$' &quot;gzip -c '%t' &gt;&gt; '%f'&quot;</screen>
+        <screen>append-hook '\.gz$' &quot;gzip --stdout '%t' &gt;&gt; '%f'&quot;</screen>
 
         <itemizedlist>
           <listitem><para>Mutt wants to append an email to a folder, <quote>example.gz</quote>,
@@ -9401,8 +9377,14 @@ bind index,pager @ compose-to-sender
           <listitem><para>Mutt uses the command <literal>gzip -c</literal>
               to append to an existing compressed file</para></listitem>
         </itemizedlist>
-      </sect4>
 
+	<note>
+	  <para>
+	    The <literal>append-hook</literal> can also include extra options,
+	    e.g. compression level: <literal>--best</literal>
+	  </para>
+	</note>
+      </sect4>
     </sect3>
 
     <sect3 id="compress-empty">
@@ -9443,19 +9425,19 @@ bind index,pager @ compose-to-sender
 # The 'append-hook' is optional.
 
 # Handler for gzip compressed mailboxes</emphasis>
-open-hook   '\.gz$'  &quot;gzip -cd  '%f' &gt;  '%t'&quot;
-close-hook  '\.gz$'  &quot;gzip -c   '%t' &gt;  '%f'&quot;
-append-hook '\.gz$'  &quot;gzip -c   '%t' &gt;&gt; '%f'&quot;
+open-hook   '\.gz$' &quot;gzip --stdout --decompress '%f' &gt;  '%t'&quot;
+close-hook  '\.gz$' &quot;gzip --stdout              '%t' &gt;  '%f'&quot;
+append-hook '\.gz$' &quot;gzip --stdout              '%t' &gt;&gt; '%f'&quot;
 
 <emphasis role="comment"># Handler for bzip2 compressed mailboxes</emphasis>
-open-hook   '\.bz2$' &quot;bzip2 -cd '%f' &gt;  '%t'&quot;
-close-hook  '\.bz2$' &quot;bzip2 -c  '%t' &gt;  '%f'&quot;
-append-hook '\.bz2$' &quot;bzip2 -c  '%t' &gt;&gt; '%f'&quot;
+open-hook   '\.bz2$' &quot;bzip2 --stdout --decompress '%f' &gt;  '%t'&quot;
+close-hook  '\.bz2$' &quot;bzip2 --stdout              '%t' &gt;  '%f'&quot;
+append-hook '\.bz2$' &quot;bzip2 --stdout              '%t' &gt;&gt; '%f'&quot;
 
 <emphasis role="comment"># Handler for xz compressed mailboxes</emphasis>
-open-hook   '\.xz$'  &quot;xz    -cd '%f' &gt;  '%t'&quot;
-close-hook  '\.xz$'  &quot;xz    -c  '%t' &gt;  '%f'&quot;
-append-hook '\.xz$'  &quot;xz    -c  '%t' &gt;&gt; '%f'&quot;
+open-hook   '\.xz$' &quot;xz --stdout --decompress '%f' &gt;  '%t'&quot;
+close-hook  '\.xz$' &quot;xz --stdout              '%t' &gt;  '%f'&quot;
+append-hook '\.xz$' &quot;xz --stdout              '%t' &gt;&gt; '%f'&quot;
 
 <emphasis role="comment"># Handler for pgp encrypted mailboxes
 # PGP does not support appending to an encrypted file</emphasis>
@@ -9475,7 +9457,6 @@ close-hook  '\.gpg$' &quot;gpg --encrypt --recipient YourGpgUserIdOrKeyId &lt; '
     <title>See Also</title>
 
     <itemizedlist>
-      <listitem><para><ulink url="https://www.neomutt.org/">NeoMutt Project</ulink></para></listitem>
       <listitem><para><link linkend="compile-time-features">Compile-Time Features</link></para></listitem>
       <listitem><para><link linkend="regexp">Regular Expressions</link></para></listitem>
       <listitem><para><link linkend="tmpdir">$tmpdir</link></para></listitem>
@@ -9512,21 +9493,13 @@ close-hook  '\.gpg$' &quot;gpg --encrypt --recipient YourGpgUserIdOrKeyId &lt; '
   <sect2 id="cond-date-support">
     <title>Support</title>
 
-    <para>
-      To check if NeoMutt supports <quote>Conditional Dates</quote>, look for
-      <quote>patch-cond-date</quote> in the version info.
-      See: <xref linkend="mutt-patches"/>.
-    </para>
-
-    <itemizedlist>
-      <title>Dependencies:</title>
-      <listitem><para>mutt-1.7.1</para></listitem>
-      <listitem><para><link linkend="nested-if">nested-if patch</link></para></listitem>
-    </itemizedlist>
-
-    <para>
-      This feature is part of the <ulink url="https://www.neomutt.org/">NeoMutt Project</ulink>.
-    </para>
+    <para><emphasis role="bold">Since:</emphasis> NeoMutt 2016-03-07</para>
+      <variablelist>
+        <varlistentry>
+          <term><emphasis role="bold">Dependencies:</emphasis></term>
+          <listitem><para><link linkend="nested-if">nested-if feature</link></para></listitem>
+        </varlistentry>
+      </variablelist>
   </sect2>
 
   <sect2 id="cond-date-intro">
@@ -9860,7 +9833,6 @@ set index_format='%4C %Z %&lt;[y?%&lt;[m?%&lt;[d?%[%H:%M ]&amp;%[%a %d]&gt;&amp;
     <title>See Also</title>
 
     <itemizedlist>
-      <listitem><para><ulink url="https://www.neomutt.org/">NeoMutt Project</ulink></para></listitem>
       <listitem><para><link linkend="index-format">$index_format</link></para></listitem>
       <listitem><para><link linkend="nested-if">nested-if patch</link></para></listitem>
       <listitem><para><literal>strftime(3)</literal></para></listitem>
@@ -9897,18 +9869,8 @@ set index_format='%4C %Z %&lt;[y?%&lt;[m?%&lt;[d?%[%H:%M ]&amp;%[%a %d]&gt;&amp;
   <sect2 id="encrypt-to-self-support">
     <title>Support</title>
 
-    <para>
-      To check if NeoMutt supports <quote>encrypt-to-self</quote>, look for
-      <quote>patch-encrypt-to-self</quote> in the version info.
-      See: <xref linkend="mutt-patches"/>.
-    </para>
-
-    <itemizedlist>
-      <title>Dependencies:</title>
-      <listitem><para>mutt-1.7.1</para></listitem>
-    </itemizedlist>
-
-    <para>This feature is part of the <ulink url="https://www.neomutt.org/">NeoMutt Project</ulink>.</para>
+    <para><emphasis role="bold">Since:</emphasis> NeoMutt 2016-07-23</para>
+    <para><emphasis role="bold">Dependencies:</emphasis> None</para>
   </sect2>
 
   <sect2 id="encrypt-to-self-intro">
@@ -9994,14 +9956,6 @@ set pgp_encrypt_self = &quot;no&quot;
 </screen>
   </sect2>
 
-  <sect2 id="encrypt-to-self-see-also">
-    <title>See Also</title>
-
-    <itemizedlist>
-      <listitem><para><ulink url="https://www.neomutt.org/">NeoMutt Project</ulink></para></listitem>
-    </itemizedlist>
-  </sect2>
-
   <sect2 id="encrypt-to-self-known-bugs">
     <title>Known Bugs</title>
     <para>None</para>
@@ -10024,56 +9978,49 @@ set pgp_encrypt_self = &quot;no&quot;
   <sect2 id="fmemopen-support">
     <title>Support</title>
 
-    <para>
-      To check if NeoMutt supports <quote>fmemopen</quote>, look for
-      <quote>patch-fmemopen</quote> in the version info.
-      See: <xref linkend="mutt-patches"/>.
-    </para>
-
-    <itemizedlist>
-      <title>Dependencies:</title>
-      <listitem><para>mutt-1.7.1</para></listitem>
-      <listitem><para><literal>open_memstream()</literal>, <literal>fmemopen()</literal> from glibc</para></listitem>
-    </itemizedlist>
+    <para><emphasis role="bold">Since:</emphasis> NeoMutt 2016-03-07</para>
+      <variablelist>
+        <varlistentry>
+          <term><emphasis role="bold">Dependencies:</emphasis></term>
+          <listitem><para><literal>open_memstream()</literal>, <literal>fmemopen()</literal> from glibc</para></listitem>
+        </varlistentry>
+      </variablelist>
 
     <para>
-      This feature can be disabled by running <literal>configure</literal> with
-      the option <literal>--disable-fmemopen</literal>
+      This feature can be enabled by running <literal>configure</literal> with
+      the option <literal>--enable-fmemopen</literal>
     </para>
-
-    <para>This feature is part of the <ulink url="https://www.neomutt.org/">NeoMutt Project</ulink>.</para>
   </sect2>
 
   <sect2 id="fmemopen-intro">
     <title>Introduction</title>
 
-        <para>
+    <para>
     The <quote>fmemopen</quote> patch speeds up some searches.
-        </para>
+    </para>
 
-        <para>
+    <para>
     This feature changes a few places where Mutt creates temporary files.
     It replaces them with in-memory buffers.  This should improve the
     performance when searching the header or body using the
     <link linkend="thorough-search">$thorough_search</link> option.
-        </para>
+    </para>
 
-        <para>
+    <para>
     There are no user-configurable parts.
-        </para>
+    </para>
 
-        <para>
+    <para>
     This feature depends on <literal>open_memstream()</literal> and
     <literal>fmemopen()</literal>.  They are provided by glibc.  Without
     them, Mutt will simply create temporary files.
-        </para>
+    </para>
   </sect2>
 
   <sect2 id="fmemopen-see-also">
     <title>See Also</title>
 
     <itemizedlist>
-      <listitem><para><ulink url="https://www.neomutt.org/">NeoMutt Project</ulink></para></listitem>
       <listitem><para><link linkend="compile-time-features">Compile-Time Features</link></para></listitem>
       <listitem><para><literal>fmemopen(3)</literal></para></listitem>
     </itemizedlist>
@@ -10100,18 +10047,8 @@ set pgp_encrypt_self = &quot;no&quot;
   <sect2 id="forgotten-attachment-support">
     <title>Support</title>
 
-    <para>
-      To check if NeoMutt supports <quote>forgotten-attachment</quote>, look for
-      <quote>patch-forgotten-attachment</quote> in the version info.
-      See: <xref linkend="mutt-patches"/>.
-    </para>
-
-    <itemizedlist>
-      <title>Dependencies:</title>
-      <listitem><para>mutt-1.7.1</para></listitem>
-    </itemizedlist>
-
-    <para>This feature is part of the <ulink url="https://www.neomutt.org/">NeoMutt Project</ulink>.</para>
+    <para><emphasis role="bold">Since:</emphasis> NeoMutt 2016-09-10</para>
+    <para><emphasis role="bold">Dependencies:</emphasis> None</para>
   </sect2>
 
   <sect2 id="forgotten-attachment-intro">
@@ -10195,7 +10132,6 @@ set attach_keyword = &quot;\\&lt;attach(|ed|ments?)\\&gt;&quot;
     <title>See Also</title>
 
     <itemizedlist>
-      <listitem><para><ulink url="https://www.neomutt.org/">NeoMutt Project</ulink></para></listitem>
       <listitem><para><link linkend="attach-menu">The Attachment Menu</link></para></listitem>
       <listitem><para><link linkend="attachment-map">The Attachment Menu key mappings</link></para></listitem>
     </itemizedlist>
@@ -10224,18 +10160,8 @@ set attach_keyword = &quot;\\&lt;attach(|ed|ments?)\\&gt;&quot;
   <sect2 id="ifdef-support">
     <title>Support</title>
 
-    <para>
-      To check if NeoMutt supports <quote>ifdef</quote>, look for
-      <quote>patch-ifdef</quote> in the version info.
-      See: <xref linkend="mutt-patches"/>.
-    </para>
-
-    <itemizedlist>
-      <title>Dependencies:</title>
-      <listitem><para>mutt-1.7.1</para></listitem>
-    </itemizedlist>
-
-    <para>This feature is part of the <ulink url="https://www.neomutt.org/">NeoMutt Project</ulink>.</para>
+    <para><emphasis role="bold">Since:</emphasis> NeoMutt 2016-03-07</para>
+    <para><emphasis role="bold">Dependencies:</emphasis> None</para>
   </sect2>
 
   <sect2 id="ifdef-intro">
@@ -10331,14 +10257,6 @@ ifndef USE_SIDEBAR finish
 </screen>
   </sect2>
 
-  <sect2 id="ifdef-see-also">
-    <title>See Also</title>
-
-    <itemizedlist>
-      <listitem><para><ulink url="https://www.neomutt.org/">NeoMutt Project</ulink></para></listitem>
-    </itemizedlist>
-  </sect2>
-
   <sect2 id="ifdef-known-bugs">
     <title>Known Bugs</title>
     <para>None</para>
@@ -10361,19 +10279,13 @@ ifndef USE_SIDEBAR finish
   <sect2 id="index-color-support">
     <title>Support</title>
 
-    <para>
-      To check if NeoMutt supports <quote>Index Color</quote>, look for
-      <quote>patch-index-color</quote> in the version info.
-      See: <xref linkend="mutt-patches"/>.
-    </para>
-
-    <itemizedlist>
-      <title>Dependencies:</title>
-      <listitem><para>mutt-1.7.1</para></listitem>
-      <listitem><para><link linkend="status-color">status-color patch</link></para></listitem>
-    </itemizedlist>
-
-    <para>This feature is part of the <ulink url="https://www.neomutt.org/">NeoMutt Project</ulink>.</para>
+    <para><emphasis role="bold">Since:</emphasis> NeoMutt 2016-03-07</para>
+      <variablelist>
+        <varlistentry>
+          <term><emphasis role="bold">Dependencies:</emphasis></term>
+          <listitem><para><link linkend="status-color">status-color patch</link></para></listitem>
+        </varlistentry>
+      </variablelist>
   </sect2>
 
   <sect2 id="index-color-intro">
@@ -10528,7 +10440,6 @@ color index_size cyan default
     <title>See Also</title>
 
     <itemizedlist>
-      <listitem><para><ulink url="https://www.neomutt.org/">NeoMutt Project</ulink></para></listitem>
       <listitem><para><link linkend="regexp">Regular Expressions</link></para></listitem>
       <listitem><para><link linkend="patterns">Patterns</link></para></listitem>
       <listitem><para><link linkend="index-format">$index_format</link></para></listitem>
@@ -10563,18 +10474,8 @@ color index_size cyan default
   <sect2 id="initials-support">
     <title>Support</title>
 
-    <para>
-      To check if NeoMutt supports <quote>Initials</quote>, look for
-      <quote>patch-initials</quote> in the version info.
-      See: <xref linkend="mutt-patches"/>.
-    </para>
-
-    <itemizedlist>
-      <title>Dependencies:</title>
-      <listitem><para>mutt-1.7.1</para></listitem>
-    </itemizedlist>
-
-    <para>This feature is part of the <ulink url="https://www.neomutt.org/">NeoMutt Project</ulink>.</para>
+    <para><emphasis role="bold">Since:</emphasis> NeoMutt 2016-03-07</para>
+    <para><emphasis role="bold">Dependencies:</emphasis> None</para>
   </sect2>
 
   <sect2 id="initials-intro">
@@ -10639,7 +10540,6 @@ set index_format='%4C %Z %{%b %d} %I (%?l?%4l&amp;%4c?) %s'
     <title>See Also</title>
 
     <itemizedlist>
-      <listitem><para><ulink url="https://www.neomutt.org/">NeoMutt Project</ulink></para></listitem>
       <listitem><para><link linkend="index-format">$index_format</link></para></listitem>
       <listitem><para><link linkend="index-color">index-color patch</link></para></listitem>
       <listitem><para><link linkend="folder-hook">folder-hook</link></para></listitem>
@@ -10667,18 +10567,8 @@ set index_format='%4C %Z %{%b %d} %I (%?l?%4l&amp;%4c?) %s'
   <sect2 id="keywords-support">
     <title>Support</title>
 
-    <para>
-      To check if NeoMutt supports <quote>Keywords</quote>, look for
-      <quote>patch-keywords</quote> in the version info.
-      See: <xref linkend="mutt-patches"/>.
-    </para>
-
-    <itemizedlist>
-      <title>Dependencies:</title>
-      <listitem><para>mutt-1.7.1</para></listitem>
-    </itemizedlist>
-
-    <para>This feature is part of the <ulink url="https://www.neomutt.org/">NeoMutt Project</ulink>.</para>
+    <para><emphasis role="bold">Since:</emphasis> NeoMutt 2016-05-30</para>
+    <para><emphasis role="bold">Dependencies:</emphasis> None</para>
   </sect2>
 
   <sect2 id="keywords-intro">
@@ -10863,7 +10753,6 @@ bind index,pager y edit-label
     <title>See Also</title>
 
     <itemizedlist>
-      <listitem><para><ulink url="https://www.neomutt.org/">NeoMutt Project</ulink></para></listitem>
       <listitem><para><link linkend="index-format">$index_format</link></para></listitem>
       <listitem><para><link linkend="index-color">index-color patch</link></para></listitem>
       <listitem><para><link linkend="folder-hook">folder-hook</link></para></listitem>
@@ -10893,6 +10782,14 @@ bind index,pager y edit-label
   <sect2 id="kyoto-cabinet-support">
     <title>Support</title>
 
+    <para><emphasis role="bold">Since:</emphasis> NeoMutt 2016-10-02</para>
+      <variablelist>
+        <varlistentry>
+          <term><emphasis role="bold">Dependencies:</emphasis></term>
+          <listitem><para><ulink url="http://fallabs.com/kyotocabinet/">Kyoto Cabinet libraries</ulink></para></listitem>
+        </varlistentry>
+      </variablelist>
+
     <para>
       To check if Mutt supports Kyoto Cabinet, look for
 
@@ -10903,13 +10800,6 @@ bind index,pager y edit-label
       </itemizedlist>
     </para>
 
-    <itemizedlist>
-      <title>Dependencies:</title>
-      <listitem><para>mutt-1.7.1</para></listitem>
-      <listitem><para><ulink url="http://fallabs.com/kyotocabinet/">Kyoto Cabinet libraries</ulink></para></listitem>
-    </itemizedlist>
-
-    <para>This feature is part of the <ulink url="https://www.neomutt.org/">NeoMutt Project</ulink>.</para>
   </sect2>
 
   <sect2 id="kyoto-cabinet-intro">
@@ -10927,7 +10817,6 @@ bind index,pager y edit-label
     <title>See Also</title>
 
     <itemizedlist>
-      <listitem><para><ulink url="https://www.neomutt.org/">NeoMutt Project</ulink></para></listitem>
       <listitem><para><link linkend="caching">Local Caching</link></para></listitem>
       <listitem><para><ulink url="http://fallabs.com/kyotocabinet/">Kyoto Cabinet</ulink></para></listitem>
     </itemizedlist>
@@ -10953,18 +10842,8 @@ bind index,pager y edit-label
   <sect2 id="limit-current-thread-support">
     <title>Support</title>
 
-    <para>
-      To check if NeoMutt supports <quote>limit-current-thread</quote>, look for
-      <quote>patch-limit-current-thread</quote> in the version info.
-      See: <xref linkend="mutt-patches"/>.
-    </para>
-
-    <itemizedlist>
-      <title>Dependencies:</title>
-      <listitem><para>mutt-1.7.1</para></listitem>
-    </itemizedlist>
-
-    <para>This feature is part of the <ulink url="https://www.neomutt.org/">NeoMutt Project</ulink>.</para>
+    <para><emphasis role="bold">Since:</emphasis> NeoMutt 2016-03-28</para>
+    <para><emphasis role="bold">Dependencies:</emphasis> None</para>
   </sect2>
 
   <sect2 id="limit-current-thread-intro">
@@ -11024,14 +10903,6 @@ bind index &lt;esc&gt;L limit-current-thread
 </screen>
   </sect2>
 
-  <sect2 id="limit-current-thread-see-also">
-    <title>See Also</title>
-
-    <itemizedlist>
-      <listitem><para><ulink url="https://www.neomutt.org/">NeoMutt Project</ulink></para></listitem>
-    </itemizedlist>
-  </sect2>
-
   <sect2 id="limit-current-thread-known-bugs">
     <title>Known Bugs</title>
     <para>None</para>
@@ -11053,18 +10924,8 @@ bind index &lt;esc&gt;L limit-current-thread
   <sect2 id="lmdb-support">
     <title>Support</title>
 
-    <para>
-      To check if NeoMutt supports <quote>lmdb</quote>, look for
-      <quote>patch-lmdb</quote> in the version info.
-      See: <xref linkend="mutt-patches"/>.
-    </para>
-
-    <itemizedlist>
-      <title>Dependencies:</title>
-      <listitem><para>mutt-1.7.1</para></listitem>
-    </itemizedlist>
-
-    <para>This feature is part of the <ulink url="https://www.neomutt.org/">NeoMutt Project</ulink>.</para>
+    <para><emphasis role="bold">Since:</emphasis> NeoMutt 2016-07-23</para>
+    <para><emphasis role="bold">Dependencies:</emphasis> None</para>
   </sect2>
 
   <sect2 id="lmdb-intro">
@@ -11087,7 +10948,6 @@ bind index &lt;esc&gt;L limit-current-thread
     <title>See Also</title>
 
     <itemizedlist>
-      <listitem><para><ulink url="https://www.neomutt.org/">NeoMutt Project</ulink></para></listitem>
       <listitem><para><link linkend="caching">Local Caching</link></para></listitem>
     </itemizedlist>
   </sect2>
@@ -11114,18 +10974,8 @@ bind index &lt;esc&gt;L limit-current-thread
   <sect2 id="multiple-fcc-support">
     <title>Support</title>
 
-    <para>
-      To check if NeoMutt supports <quote>multiple-fcc</quote>, look for
-      <quote>patch-multiple-fcc</quote> in the version info.
-      See: <xref linkend="mutt-patches"/>.
-    </para>
-
-    <itemizedlist>
-      <title>Dependencies:</title>
-      <listitem><para>mutt-1.7.1</para></listitem>
-    </itemizedlist>
-
-    <para>This feature is part of the <ulink url="https://www.neomutt.org/">NeoMutt Project</ulink>.</para>
+    <para><emphasis role="bold">Since:</emphasis> NeoMutt 2016-08-08</para>
+    <para><emphasis role="bold">Dependencies:</emphasis> None</para>
   </sect2>
 
   <sect2 id="multiple-fcc-intro">
@@ -11153,7 +11003,6 @@ bind index &lt;esc&gt;L limit-current-thread
     <title>See Also</title>
 
     <itemizedlist>
-      <listitem><para><ulink url="https://www.neomutt.org/">NeoMutt Project</ulink></para></listitem>
       <listitem><para><link linkend="record">$record</link></para></listitem>
       <listitem><para><link linkend="fcc-hook">fcc-hook</link></para></listitem>
     </itemizedlist>
@@ -11180,18 +11029,8 @@ bind index &lt;esc&gt;L limit-current-thread
   <sect2 id="nested-if-support">
     <title>Support</title>
 
-    <para>
-      To check if NeoMutt supports <quote>Nested If</quote>, look for
-      <quote>patch-nested-if</quote> in the version info.
-      See: <xref linkend="mutt-patches"/>.
-    </para>
-
-    <itemizedlist>
-      <title>Dependencies:</title>
-      <listitem><para>mutt-1.7.1</para></listitem>
-    </itemizedlist>
-
-    <para>This feature is part of the <ulink url="https://www.neomutt.org/">NeoMutt Project</ulink>.</para>
+    <para><emphasis role="bold">Since:</emphasis> NeoMutt 2016-03-07</para>
+    <para><emphasis role="bold">Dependencies:</emphasis> None</para>
   </sect2>
 
   <sect2 id="nested-if-intro">
@@ -11348,7 +11187,6 @@ set index_format='%4C %Z %{%b %d} %-25.25n %&lt;M?[%M] %s&amp;%s%* %&lt;l?%l&amp
     <title>See Also</title>
 
     <itemizedlist>
-      <listitem><para><ulink url="https://www.neomutt.org/">NeoMutt Project</ulink></para></listitem>
       <listitem><para><link linkend="cond-date">cond-date patch</link></para></listitem>
       <listitem><para><link linkend="index-format">$index_format</link></para></listitem>
       <listitem><para><link linkend="status-format">$status_format</link></para></listitem>
@@ -11378,18 +11216,8 @@ set index_format='%4C %Z %{%b %d} %-25.25n %&lt;M?[%M] %s&amp;%s%* %&lt;l?%l&amp
   <sect2 id="new-mail-support">
     <title>Support</title>
 
-    <para>
-      To check if NeoMutt supports <quote>new-mail</quote>, look for
-      <quote>patch-new-mail</quote> in the version info.
-      See: <xref linkend="mutt-patches"/>.
-    </para>
-
-    <itemizedlist>
-      <title>Dependencies:</title>
-      <listitem><para>mutt-1.7.1</para></listitem>
-    </itemizedlist>
-
-    <para>This feature is part of the <ulink url="https://www.neomutt.org/">NeoMutt Project</ulink>.</para>
+    <para><emphasis role="bold">Since:</emphasis> NeoMutt 2016-07-23</para>
+    <para><emphasis role="bold">Dependencies:</emphasis> None</para>
   </sect2>
 
   <sect2 id="new-mail-intro">
@@ -11479,22 +11307,15 @@ set new_mail_command = &quot;&quot;
     <title>See Also</title>
 
     <itemizedlist>
-      <listitem><para><ulink url="https://www.neomutt.org/">NeoMutt Project</ulink></para></listitem>
       <listitem><para><link linkend="folder-hook">folder-hook</link></para></listitem>
     </itemizedlist>
   </sect2>
 
   <sect2 id="new-mail-known-bugs">
     <title>Known Bugs</title>
-    <itemizedlist>
-      <listitem>
-        <para>
-          Notifies about spurious <emphasis role="bold">new email</emphasis>
-          when an email is saved, see
-          <ulink url="https://github.com/neomutt/neomutt/issues/20">Issue #20</ulink>
-        </para>
-    </listitem>
-    </itemizedlist>
+    <para>
+      None
+    </para>
   </sect2>
 
   <sect2 id="new-mail-credits">
@@ -11514,18 +11335,8 @@ set new_mail_command = &quot;&quot;
   <sect2 id="nntp-support">
     <title>Support</title>
 
-    <para>
-      To check if NeoMutt supports <quote>NNTP</quote>, look for
-      <quote>+USE_NNTP</quote> in the version info.
-      See: <xref linkend="compile-time-features"/>.
-    </para>
-
-    <itemizedlist>
-      <title>Dependencies:</title>
-      <listitem><para>mutt-1.7.1</para></listitem>
-    </itemizedlist>
-
-    <para>This feature is part of the <ulink url="https://www.neomutt.org/">NeoMutt Project</ulink>.</para>
+    <para><emphasis role="bold">Since:</emphasis> NeoMutt 2016-05-30</para>
+    <para><emphasis role="bold">Dependencies:</emphasis> None</para>
   </sect2>
 
   <sect2 id="nntp-intro">
@@ -11906,7 +11717,6 @@ bind index \CG get-message
     <title>See Also</title>
 
     <itemizedlist>
-      <listitem><para><ulink url="https://www.neomutt.org/">NeoMutt Project</ulink></para></listitem>
       <listitem><para><link linkend="compile-time-features">Compile-Time Features</link></para></listitem>
     </itemizedlist>
   </sect2>
@@ -11935,21 +11745,13 @@ bind index \CG get-message
   <sect2 id="notmuch-support">
     <title>Support</title>
 
-    <para>
-      To check if NeoMutt supports <quote>Notmuch</quote>, look for
-      <quote>+USE_NOTMUCH</quote> in the version info.
-      See: <xref linkend="compile-time-features"/>.
-    </para>
-
+    <para><emphasis role="bold">Since:</emphasis> NeoMutt 2016-03-17</para>
+    <para><emphasis role="bold">Dependencies:</emphasis></para>
     <itemizedlist>
-      <title>Dependencies:</title>
-      <listitem><para>mutt-1.7.1</para></listitem>
       <listitem><para><link linkend="quasi-delete">quasi-delete patch</link></para></listitem>
       <listitem><para><link linkend="index-color">index-color patch</link></para></listitem>
       <listitem><para>Notmuch libraries</para></listitem>
     </itemizedlist>
-
-    <para>This feature is part of the <ulink url="https://www.neomutt.org/">NeoMutt Project</ulink>.</para>
   </sect2>
 
   <sect2 id="notmuch-intro">
@@ -12460,7 +12262,6 @@ color index_tags green default
     <title>See Also</title>
 
     <itemizedlist>
-      <listitem><para><ulink url="https://www.neomutt.org/">NeoMutt Project</ulink></para></listitem>
       <listitem><para><link linkend="compile-time-features">Compile-Time Features</link></para></listitem>
     </itemizedlist>
   </sect2>
@@ -12508,18 +12309,8 @@ color index_tags green default
   <sect2 id="progress-support">
     <title>Support</title>
 
-    <para>
-      To check if NeoMutt supports <quote>Progress Bar</quote>, look for
-      <quote>patch-progress</quote> in the version info.
-      See: <xref linkend="mutt-patches"/>.
-    </para>
-
-    <itemizedlist>
-      <title>Dependencies:</title>
-      <listitem><para>mutt-1.7.1</para></listitem>
-    </itemizedlist>
-
-    <para>This feature is part of the <ulink url="https://www.neomutt.org/">NeoMutt Project</ulink>.</para>
+    <para><emphasis role="bold">Since:</emphasis> NeoMutt 2016-03-07</para>
+    <para><emphasis role="bold">Dependencies:</emphasis> None</para>
   </sect2>
 
   <sect2 id="progress-intro">
@@ -12574,7 +12365,6 @@ color progress white red
     <title>See Also</title>
 
     <itemizedlist>
-      <listitem><para><ulink url="https://www.neomutt.org/">NeoMutt Project</ulink></para></listitem>
       <listitem><para><link linkend="color">Color command</link></para></listitem>
     </itemizedlist>
   </sect2>
@@ -12603,18 +12393,8 @@ color progress white red
   <sect2 id="quasi-delete-support">
     <title>Support</title>
 
-    <para>
-      To check if NeoMutt supports <quote>Quasi-Delete</quote>, look for
-      <quote>patch-quasi-delete</quote> in the version info.
-      See: <xref linkend="mutt-patches"/>.
-    </para>
-
-    <itemizedlist>
-      <title>Dependencies:</title>
-      <listitem><para>mutt-1.7.1</para></listitem>
-    </itemizedlist>
-
-    <para>This feature is part of the <ulink url="https://www.neomutt.org/">NeoMutt Project</ulink>.</para>
+    <para><emphasis role="bold">Since:</emphasis> NeoMutt 2016-03-07</para>
+    <para><emphasis role="bold">Dependencies:</emphasis> None</para>
   </sect2>
 
   <sect2 id="quasi-delete-intro">
@@ -12673,7 +12453,6 @@ bind index,pager Q quasi-delete
     <title>See Also</title>
 
     <itemizedlist>
-      <listitem><para><ulink url="https://www.neomutt.org/">NeoMutt Project</ulink></para></listitem>
       <listitem><para><link linkend="notmuch">notmuch patch</link></para></listitem>
     </itemizedlist>
   </sect2>
@@ -12700,18 +12479,8 @@ bind index,pager Q quasi-delete
   <sect2 id="reply-with-xorig-support">
     <title>Support</title>
 
-    <para>
-      To check if NeoMutt supports <quote>Reply With X-Original-To</quote>, look for
-      <quote>patch-reply-with-xorig</quote> in the version info.
-      See: <xref linkend="mutt-patches"/>.
-    </para>
-
-    <itemizedlist>
-      <title>Dependencies:</title>
-      <listitem><para>mutt-1.7.1</para></listitem>
-    </itemizedlist>
-
-    <para>This feature is part of the <ulink url="https://www.neomutt.org/">NeoMutt Project</ulink>.</para>
+    <para><emphasis role="bold">Since:</emphasis> NeoMutt 2016-09-10</para>
+    <para><emphasis role="bold">Dependencies:</emphasis> None</para>
   </sect2>
 
   <sect2 id="reply-with-xorig-intro">
@@ -12780,18 +12549,8 @@ set reply_with_xorig = &quot;yes&quot;
   <sect2 id="sensible-browser-support">
     <title>Support</title>
 
-    <para>
-      To check if NeoMutt supports <quote>sensible-browser</quote>, look for
-      <quote>patch-sensible-browser</quote> in the version info.
-      See: <xref linkend="mutt-patches"/>.
-    </para>
-
-    <itemizedlist>
-      <title>Dependencies:</title>
-      <listitem><para>mutt-1.7.1</para></listitem>
-    </itemizedlist>
-
-    <para>This feature is part of the <ulink url="https://www.neomutt.org/">NeoMutt Project</ulink>.</para>
+    <para><emphasis role="bold">Since:</emphasis> NeoMutt 2016-09-10</para>
+    <para><emphasis role="bold">Dependencies:</emphasis> None</para>
   </sect2>
 
   <sect2 id="sensible-browser-intro">
@@ -12875,7 +12634,6 @@ set sort_browser="reverse-size"
     <title>See Also</title>
 
     <itemizedlist>
-      <listitem><para><ulink url="https://www.neomutt.org/">NeoMutt Project</ulink></para></listitem>
       <listitem><para><link linkend="folder-format">$folder_format</link></para></listitem>
     </itemizedlist>
   </sect2>
@@ -12902,18 +12660,8 @@ set sort_browser="reverse-size"
   <sect2 id="sidebar-support">
     <title>Support</title>
 
-    <para>
-      To check if NeoMutt supports <quote>Sidebar</quote>, look for
-      <quote>+USE_SIDEBAR</quote> in the version info.
-      See: <xref linkend="compile-time-features"/>.
-    </para>
-
-    <itemizedlist>
-      <title>Dependencies:</title>
-      <listitem><para>mutt-1.7.1</para></listitem>
-    </itemizedlist>
-
-    <para>This feature is part of the <ulink url="https://www.neomutt.org/">NeoMutt Project</ulink>.</para>
+    <para><emphasis role="bold">Since:</emphasis> NeoMutt 2016-09-10, Mutt 1.7.0</para>
+    <para><emphasis role="bold">Dependencies:</emphasis> None</para>
   </sect2>
 
   <sect2 id="sidebar-intro">
@@ -13095,10 +12843,10 @@ set sort_browser="reverse-size"
 
       <command>unsidebar_whitelist<anchor id="unsidebar-whitelist"/></command>
       <arg choice="plain">
-	<replaceable class="parameter">*</replaceable>
+        <replaceable class="parameter">*</replaceable>
       </arg>
       <arg choice="plain" rep="repeat">
-	<replaceable class="parameter">mailbox</replaceable>
+        <replaceable class="parameter">mailbox</replaceable>
       </arg>
     </cmdsynopsis>
 
@@ -13392,18 +13140,8 @@ color sidebar_ordinary color245 default
   <sect2 id="skip-quoted-support">
     <title>Support</title>
 
-    <para>
-      To check if NeoMutt supports <quote>skip-quoted</quote>, look for
-      <quote>patch-skip-quoted</quote> in the version info.
-      See: <xref linkend="mutt-patches"/>.
-    </para>
-
-    <itemizedlist>
-      <title>Dependencies:</title>
-      <listitem><para>mutt-1.7.1</para></listitem>
-    </itemizedlist>
-
-    <para>This feature is part of the <ulink url="https://www.neomutt.org/">NeoMutt Project</ulink>.</para>
+    <para><emphasis role="bold">Since:</emphasis> NeoMutt 2016-03-28</para>
+    <para><emphasis role="bold">Dependencies:</emphasis> None</para>
   </sect2>
 
   <sect2 id="skip-quoted-intro">
@@ -13462,14 +13200,6 @@ set skip_quoted_offset = 3
 </screen>
   </sect2>
 
-  <sect2 id="skip-quoted-see-also">
-    <title>See Also</title>
-
-    <itemizedlist>
-      <listitem><para><ulink url="https://www.neomutt.org/">NeoMutt Project</ulink></para></listitem>
-    </itemizedlist>
-  </sect2>
-
   <sect2 id="skip-quoted-known-bugs">
     <title>Known Bugs</title>
     <para>None</para>
@@ -13491,18 +13221,8 @@ set skip_quoted_offset = 3
   <sect2 id="status-color-support">
     <title>Support</title>
 
-    <para>
-      To check if NeoMutt supports <quote>Status Color</quote>, look for
-      <quote>patch-status-color</quote> in the version info.
-      See: <xref linkend="mutt-patches"/>.
-    </para>
-
-    <itemizedlist>
-      <title>Dependencies:</title>
-      <listitem><para>mutt-1.7.1</para></listitem>
-    </itemizedlist>
-
-    <para>This feature is part of the <ulink url="https://www.neomutt.org/">NeoMutt Project</ulink>.</para>
+    <para><emphasis role="bold">Since:</emphasis> NeoMutt 2016-03-07</para>
+    <para><emphasis role="bold">Dependencies:</emphasis> None</para>
   </sect2>
 
   <sect2 id="status-color-intro">
@@ -13643,7 +13363,6 @@ color status brightwhite default 'Mutt: ([^ ]+)' 1
     <title>See Also</title>
 
     <itemizedlist>
-      <listitem><para><ulink url="https://www.neomutt.org/">NeoMutt Project</ulink></para></listitem>
       <listitem><para><link linkend="compile-time-features">Compile-Time Features</link></para></listitem>
       <listitem><para><link linkend="regexp">Regular Expressions</link></para></listitem>
       <listitem><para><link linkend="patterns">Patterns</link></para></listitem>
@@ -13675,18 +13394,8 @@ color status brightwhite default 'Mutt: ([^ ]+)' 1
   <sect2 id="timeout-support">
     <title>Support</title>
 
-    <para>
-      To check if NeoMutt supports <quote>timeout</quote>, look for
-      <quote>patch-timeout</quote> in the version info.
-      See: <xref linkend="mutt-patches"/>.
-    </para>
-
-    <itemizedlist>
-      <title>Dependencies:</title>
-      <listitem><para>mutt-1.7.1</para></listitem>
-    </itemizedlist>
-
-    <para>This feature is part of the <ulink url="https://www.neomutt.org/">NeoMutt Project</ulink>.</para>
+    <para><emphasis role="bold">Since:</emphasis> NeoMutt 2016-08-08</para>
+    <para><emphasis role="bold">Dependencies:</emphasis> None</para>
   </sect2>
 
   <sect2 id="timeout-intro">
@@ -13731,7 +13440,6 @@ timeout-hook . 'exec sync-mailbox'
     <title>See Also</title>
 
     <itemizedlist>
-      <listitem><para><ulink url="https://www.neomutt.org/">NeoMutt Project</ulink></para></listitem>
       <listitem><para><link linkend="timeout">$timeout</link></para></listitem>
     </itemizedlist>
   </sect2>
@@ -13757,19 +13465,13 @@ timeout-hook . 'exec sync-mailbox'
   <sect2 id="tls-sni-support">
     <title>Support</title>
 
-    <para>
-      To check if NeoMutt supports <quote>TLS-SNI</quote>, look for
-      <quote>patch-tls-sni</quote> in the version info.
-      See: <xref linkend="mutt-patches"/>.
-    </para>
-
-    <itemizedlist>
-      <title>Dependencies:</title>
-      <listitem><para>mutt-1.7.1</para></listitem>
-      <listitem><para>OpenSSL</para></listitem>
-    </itemizedlist>
-
-    <para>This feature is part of the <ulink url="https://www.neomutt.org/">NeoMutt Project</ulink>.</para>
+    <para><emphasis role="bold">Since:</emphasis> NeoMutt 2016-03-07</para>
+      <variablelist>
+        <varlistentry>
+          <term><emphasis role="bold">Dependencies:</emphasis></term>
+          <listitem><para>OpenSSL</para></listitem>
+        </varlistentry>
+      </variablelist>
   </sect2>
 
   <sect2 id="tls-sni-intro">
@@ -13802,14 +13504,6 @@ openssl s_client -host &lt;imap server&gt; -port &lt;port&gt; -tls1 -servername 
 </screen>
   </sect2>
 
-  <sect2 id="tls-sni-see-also">
-    <title>See Also</title>
-
-    <itemizedlist>
-      <listitem><para><ulink url="https://www.neomutt.org/">NeoMutt Project</ulink></para></listitem>
-    </itemizedlist>
-  </sect2>
-
   <sect2 id="tls-sni-known-bugs">
     <title>Known Bugs</title>
     <para>None</para>
@@ -13832,23 +13526,13 @@ openssl s_client -host &lt;imap server&gt; -port &lt;port&gt; -tls1 -servername 
   <sect2 id="trash-folder-support">
     <title>Support</title>
 
-    <para>
-      To check if Mutt supports <quote>Trash Folder</quote>, look for
-      <quote>patch-trash</quote> in the version info.
-      See: <xref linkend="mutt-patches"/>.
-    </para>
-
-    <para>
-      If IMAP is enabled, this patch will use it
-    </para>
-
-    <itemizedlist>
-      <title>Dependencies:</title>
-      <listitem><para>mutt-1.7.1</para></listitem>
-      <listitem><para>IMAP support</para></listitem>
-    </itemizedlist>
-
-    <para>This feature is part of the <ulink url="https://www.neomutt.org/">NeoMutt Project</ulink>.</para>
+    <para><emphasis role="bold">Since:</emphasis> NeoMutt 2016-09-10, Mutt 1.7.0</para>
+    <variablelist>
+      <varlistentry>
+        <term><emphasis role="bold">Dependencies:</emphasis></term>
+        <listitem><para>If IMAP is enabled, the trash folder will use it wisely</para></listitem>
+      </varlistentry>
+    </variablelist>
   </sect2>
 
   <sect2 id="trash-folder-intro">
@@ -13960,7 +13644,6 @@ bind index D purge-message
     <title>See Also</title>
 
     <itemizedlist>
-      <listitem><para><ulink url="https://www.neomutt.org/">NeoMutt Project</ulink></para></listitem>
       <listitem><para><link linkend="folder-hook">folder-hook</link></para></listitem>
     </itemizedlist>
   </sect2>
