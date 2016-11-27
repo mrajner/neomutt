@@ -1117,15 +1117,15 @@ static int parse_overview_line (char *line, void *data)
 
     /* try to replace with header from cache */
     snprintf (buf, sizeof (buf), "%d", anum);
-    hdata = mutt_hcache_fetch (fc->hc, buf, strlen);
+    hdata = mutt_hcache_fetch (fc->hc, buf, strlen(buf));
     if (hdata)
     {
       dprint (2, (debugfile,
 		  "parse_overview_line: mutt_hcache_fetch %s\n", buf));
       mutt_free_header (&hdr);
       ctx->hdrs[ctx->msgcount] =
-      hdr = mutt_hcache_restore (hdata, NULL);
-      FREE (&hdata);
+      hdr = mutt_hcache_restore (hdata);
+      mutt_hcache_free (fc->hc, &hdata);
       hdr->data = 0;
       hdr->read = 0;
       hdr->old = 0;
@@ -1148,7 +1148,7 @@ static int parse_overview_line (char *line, void *data)
     {
       dprint (2, (debugfile,
 		  "parse_overview_line: mutt_hcache_store %s\n", buf));
-      mutt_hcache_store (fc->hc, buf, hdr, 0, strlen, MUTT_GENERATE_UIDVALIDITY);
+      mutt_hcache_store (fc->hc, buf, strlen(buf), hdr, 0);
     }
   }
 #endif
@@ -1249,7 +1249,7 @@ static int nntp_fetch_headers (CONTEXT *ctx, void *hc,
 	{
 	  dprint (2, (debugfile,
 		      "nntp_fetch_headers: mutt_hcache_delete %s\n", buf));
-	  mutt_hcache_delete (fc.hc, buf, strlen);
+	  mutt_hcache_delete (fc.hc, buf, strlen(buf));
 	}
 #endif
       }
@@ -1282,14 +1282,14 @@ static int nntp_fetch_headers (CONTEXT *ctx, void *hc,
 
 #ifdef USE_HCACHE
     /* try to fetch header from cache */
-    hdata = mutt_hcache_fetch (fc.hc, buf, strlen);
+    hdata = mutt_hcache_fetch (fc.hc, buf, strlen(buf));
     if (hdata)
     {
       dprint (2, (debugfile,
 		  "nntp_fetch_headers: mutt_hcache_fetch %s\n", buf));
       ctx->hdrs[ctx->msgcount] =
-      hdr = mutt_hcache_restore (hdata, NULL);
-      FREE (&hdata);
+      hdr = mutt_hcache_restore (hdata);
+      mutt_hcache_free (fc.hc, &hdata);
       hdr->data = 0;
 
       /* skip header marked as deleted in cache */
@@ -1526,8 +1526,6 @@ int nntp_open_mailbox (CONTEXT *ctx)
 
   time (&nserv->check_time);
   ctx->data = nntp_data;
-  // QWQ
-  // ctx->mx_close = nntp_fastclose_mailbox;
   if (!nntp_data->bcache && (nntp_data->newsrc_ent ||
       nntp_data->subscribed || option (OPTSAVEUNSUB)))
     nntp_data->bcache = mutt_bcache_open (&nserv->conn->account,
@@ -1760,7 +1758,7 @@ int nntp_post (const char *msg) {
 }
 
 /* Save changes to .newsrc and cache */
-int nntp_sync_mailbox (CONTEXT *ctx)
+int nntp_sync_mailbox (CONTEXT *ctx, int *index_hint)
 {
   NNTP_DATA *nntp_data = ctx->data;
   int rc, i;
@@ -1770,7 +1768,7 @@ int nntp_sync_mailbox (CONTEXT *ctx)
 
   /* check for new articles */
   nntp_data->nserv->check_time = 0;
-  rc = nntp_check_mailbox (ctx, NULL);
+  rc = nntp_check_mailbox (ctx, index_hint);
   if (rc)
     return rc;
 
@@ -1798,7 +1796,7 @@ int nntp_sync_mailbox (CONTEXT *ctx)
       if (hdr->deleted && !hdr->read)
 	nntp_data->unread--;
       dprint (2, (debugfile, "nntp_sync_mailbox: mutt_hcache_store %s\n", buf));
-      mutt_hcache_store (hc, buf, hdr, 0, strlen, MUTT_GENERATE_UIDVALIDITY);
+      mutt_hcache_store (hc, buf, strlen(buf), hdr, 0);
     }
 #endif
   }
@@ -2042,15 +2040,15 @@ int nntp_check_mailbox (CONTEXT *ctx, int *index_hint)
 	  messages[anum - first] = 1;
 
 	snprintf (buf, sizeof (buf), "%d", anum);
-	hdata = mutt_hcache_fetch (hc, buf, strlen);
+	hdata = mutt_hcache_fetch (hc, buf, strlen(buf));
 	if (hdata)
 	{
 	  int deleted;
 
 	  dprint (2, (debugfile,
 		      "nntp_check_mailbox: mutt_hcache_fetch %s\n", buf));
-	  hdr = mutt_hcache_restore (hdata, NULL);
-	  FREE (&hdata);
+	  hdr = mutt_hcache_restore (hdata);
+	  mutt_hcache_free (hc, &hdata);
 	  hdr->data = 0;
 	  deleted = hdr->deleted;
 	  flagged = hdr->flagged;
@@ -2089,7 +2087,7 @@ int nntp_check_mailbox (CONTEXT *ctx, int *index_hint)
 	continue;
 
       snprintf (buf, sizeof (buf), "%d", anum);
-      hdata = mutt_hcache_fetch (hc, buf, strlen);
+      hdata = mutt_hcache_fetch (hc, buf, strlen(buf));
       if (hdata)
       {
 	dprint (2, (debugfile,
@@ -2098,8 +2096,8 @@ int nntp_check_mailbox (CONTEXT *ctx, int *index_hint)
 	  mx_alloc_memory (ctx);
 
 	ctx->hdrs[ctx->msgcount] =
-	hdr = mutt_hcache_restore (hdata, NULL);
-	FREE (&hdata);
+	hdr = mutt_hcache_restore (hdata);
+	mutt_hcache_free (hc, &hdata);
 	hdr->data = 0;
 	if (hdr->deleted)
 	{
@@ -2447,6 +2445,7 @@ struct mx_ops mx_nntp_ops = {
   .open_append  = NULL,
   .close        = nntp_fastclose_mailbox,
   .check        = nntp_check_mailbox,
+  .sync         = nntp_sync_mailbox,
   .open_msg     = nntp_fetch_message,
   .close_msg    = nntp_close_message,
   .commit_msg   = NULL,

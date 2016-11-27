@@ -75,10 +75,12 @@ WHERE char *MessageCachedir;
 #endif
 #if USE_HCACHE
 WHERE char *HeaderCache;
-#if HAVE_GDBM || HAVE_DB4
+WHERE char *HeaderCacheBackend;
+#if HAVE_GDBM || HAVE_BDB
 WHERE char *HeaderCachePageSize;
-#endif /* HAVE_GDBM || HAVE_DB4 */
+#endif /* HAVE_GDBM || HAVE_BDB */
 #endif /* USE_HCACHE */
+WHERE char *MarkMacroPrefix;
 WHERE char *MhFlagged;
 WHERE char *MhReplied;
 WHERE char *MhUnseen;

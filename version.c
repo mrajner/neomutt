@@ -42,7 +42,7 @@ const char * mutt_make_version (void);
 void mutt_print_patchlist (void);
 
 /* #include "hcache.h" */
-const char * mutt_hcache_backend (void);
+const char * mutt_hcache_backend_list (void);
 
 const int SCREEN_WIDTH = 80;
 
@@ -60,6 +60,7 @@ static const char *Copyright = N_(
   "Copyright (C) 2000-2004 Edmund Grimley Evans <edmundo@rano.org>\n"
   "Copyright (C) 2006-2009 Rocco Rutte <pdmef@gmx.net>\n"
   "Copyright (C) 2014-2016 Kevin J. McCarthy <kevin@8t8.us>\n"
+  "Copyright (C) 2015-2016 Richard Russon <rich@flatcap.org>\n"
   "\n"
   "Many others not mentioned here contributed code, fixes,\n"
   "and suggestions.\n"
@@ -428,7 +429,9 @@ print_version (void)
 #endif
 
 #ifdef USE_HCACHE
-  printf ("\nhcache backend: %s", mutt_hcache_backend());
+  const char *backends = mutt_hcache_backend_list();
+  printf ("\nhcache backends: %s", backends);
+  FREE(&backends);
 #endif
 
   puts ("\n\nCompiler:");

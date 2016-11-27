@@ -6,7 +6,7 @@ dnl !!! TO DUMP THEIR RESULTS WHEN MUTT -V IS CALLED            !!!
 CFLAGS=$CFLAGS
 LDFLAGS=$LDFLAGS
 
-AC_INIT([NeoMutt], [20161104], [neomutt-devel@neomutt.org], [mutt], [https://www.neomutt.org])
+AC_INIT([NeoMutt], [20161126], [neomutt-devel@neomutt.org], [mutt], [https://www.neomutt.org])
 AC_CONFIG_SRCDIR(mutt.h)
 AM_INIT_AUTOMAKE
 AC_CONFIG_HEADERS([config.h])
@@ -15,7 +15,7 @@ AC_DEFINE(MUTT_VERSION, "1.7.1", [Version of upstream Mutt])
 
 AC_USE_SYSTEM_EXTENSIONS
 
-ALL_LINGUAS="de eu ru it es uk fr pl nl cs id sk ko el zh_TW zh_CN pt_BR eo gl sv da lt tr ja hu et ca bg ga"
+ALL_LINGUAS="bg ca cs da de el en_GB eo es et eu fr ga gl hu id it ja ko lt nl pl pt_BR ru sk sv tr uk zh_CN zh_TW"
 
 AC_CANONICAL_HOST
 
@@ -905,84 +905,46 @@ AC_ARG_ENABLE(exact-address, AS_HELP_STRING([--enable-exact-address],[Enable reg
         fi])
 
 dnl -- start cache --
-db_found=no
-db_requested=auto
-hcache_db_used=no
+hcache_db_used=
 AC_ARG_ENABLE(hcache, AS_HELP_STRING([--enable-hcache],[Enable header caching]))
-AC_ARG_WITH(tokyocabinet, AS_HELP_STRING([--without-tokyocabinet],[Don't use tokyocabinet even if it is available]))
-AC_ARG_WITH(kyotocabinet, AS_HELP_STRING([--without-kyotocabinet],[Don't use kyotocabinet even if it is available]))
-AC_ARG_WITH(qdbm, AS_HELP_STRING([--without-qdbm],[Don't use qdbm even if it is available]))
-AC_ARG_WITH(gdbm, AS_HELP_STRING([--without-gdbm],[Don't use gdbm even if it is available]))
-AC_ARG_WITH(bdb, AS_HELP_STRING([--with-bdb@<:@=DIR@:>@],[Use BerkeleyDB4 if gdbm is not available]))
-AC_ARG_WITH(lmdb, AS_HELP_STRING([--with-lmdb@<:@=DIR@:>@],[Use LMDB if gdbm is not available]))
+AC_ARG_WITH(gdbm,
+    AS_HELP_STRING(
+        [--with-gdbm@<:@=DIR@:>@],
+        [Use gdbm for the header cache (default)]))
+AC_ARG_WITH(tokyocabinet,
+    AS_HELP_STRING(
+        [--with-tokyocabinet@<:@=DIR@:>@],
+        [Use tokyocabinet for the header cache]))
+AC_ARG_WITH(kyotocabinet,
+    AS_HELP_STRING(
+        [--with-kyotocabinet@<:@=DIR@:>@],
+        [Use kyotocabinet for the header cache]))
+AC_ARG_WITH(qdbm,
+    AS_HELP_STRING(
+        [--with-qdbm@<:@=DIR@:>@],
+        [Use qdbm for the header cache]))
+AC_ARG_WITH(bdb,
+    AS_HELP_STRING(
+        [--with-bdb@<:@=DIR@:>@],
+        [Use BerkeleyDB for the header cache]))
+AC_ARG_WITH(lmdb,
+    AS_HELP_STRING(
+        [--with-lmdb@<:@=DIR@:>@],
+        [Use LMDB for the header cache]))
 
-db_found=no
 if test x$enable_hcache = xyes
 then
     AC_DEFINE(USE_HCACHE, 1, [Enable header caching])
     MUTT_LIB_OBJECTS="$MUTT_LIB_OBJECTS hcache.o"
 
-    OLDCPPFLAGS="$CPPFLAGS"
-    OLDLDFLAGS="$LDFLAGS"
-    OLDLIBS="$LIBS"
-
     need_md5="yes"
 
+    dnl -- Tokyo Cabinet --
     if test -n "$with_tokyocabinet" && test "$with_tokyocabinet" != "no"
     then
-      db_requested=TokyoCabinet
-    fi
-    if test -n "$with_kyotocabinet" && test "$with_kyotocabinet" != "no"
-    then
-      if test "$db_requested" != "auto"
-      then
-        AC_MSG_ERROR([more than one header cache engine requested.])
-      else
-        db_requested=KyotoCabinet
-      fi
-    fi
-    if test -n "$with_qdbm" && test "$with_qdbm" != "no"
-    then
-      if test "$db_requested" != "auto"
-      then
-        AC_MSG_ERROR([more than one header cache engine requested.])
-      else
-        db_requested=QDBM
-      fi
-    fi
-    if test -n "$with_gdbm" && test "$with_gdbm" != "no"
-    then
-      if test "$db_requested" != "auto"
-      then
-        AC_MSG_ERROR([more than one header cache engine requested.])
-      else
-        db_requested=GDBM
-      fi
-    fi
-    if test -n "$with_bdb" && test "$with_bdb" != "no"
-    then
-      if test "$db_requested" != "auto"
-      then
-        AC_MSG_ERROR([more than one header cache engine requested.])
-      else
-        db_requested=BDB
-      fi
-    fi
-    if test -n "$with_lmdb" && test "$with_lmdb" != "no"
-    then
-      if test "$db_requested" != "auto"
-      then
-        AC_MSG_ERROR([more than one header cache engine requested.])
-      else
-        db_requested=LMDB
-      fi
-    fi
-    
-    dnl -- Tokyo Cabinet --
-    if test "$with_tokyocabinet" != "no" \
-	    && test "$db_requested" = auto -o "$db_requested" = TokyoCabinet
-    then
-      if test -n "$with_tokyocabinet" && test "$with_tokyocabinet" != "yes"
+      OLDCPPFLAGS="$CPPFLAGS"
+      OLDLDFLAGS="$LDFLAGS"
+      if test "$with_tokyocabinet" != "yes"
       then
         CPPFLAGS="$CPPFLAGS -I$with_tokyocabinet/include"
         LDFLAGS="$LDFLAGS -L$with_tokyocabinet/lib"
@@ -990,22 +952,23 @@ then
 
       AC_CHECK_HEADER(tcbdb.h,
       AC_CHECK_LIB(tokyocabinet, tcbdbopen,
-        [MUTTLIBS="$MUTTLIBS -ltokyocabinet"
+        [
+         MUTTLIBS="$MUTTLIBS -ltokyocabinet"
          AC_DEFINE(HAVE_TC, 1, [Tokyo Cabinet Support])
-         db_found=TokyoCabinet],
-        [CPPFLAGS="$OLDCPPFLAGS"
-         LDFLAGS="$OLDLDFLAGS"]))
-      if test "$db_requested" != auto && test "$db_found" != "$db_requested"
-      then
-        AC_MSG_ERROR([Tokyo Cabinet could not be used. Check config.log for details.])
-      fi
+         MUTT_LIB_OBJECTS="$MUTT_LIB_OBJECTS hcache-tc.o"
+         hcache_db_used="tokyocabinet $hcache_db_used"
+        ],[
+         CPPFLAGS="$OLDCPPFLAGS"
+         LDFLAGS="$OLDLDFLAGS"
+        ]))
     fi
 
     dnl -- Kyoto Cabinet --
-    if test "$with_kyotocabinet" != "no" \
-        && test "$db_requested" = auto -o "$db_requested" = KyotoCabinet
+    if test -n "$with_kyotocabinet" && test "$with_kyotocabinet" != "no"
     then
-      if test -n "$with_kyotocabinet" && test "$with_kyotocabinet" != "yes"
+      OLDCPPFLAGS="$CPPFLAGS"
+      OLDLDFLAGS="$LDFLAGS"
+      if test "$with_kyotocabinet" != "yes"
       then
         CPPFLAGS="$CPPFLAGS -I$with_kyotocabinet/include"
         LDFLAGS="$LDFLAGS -L$with_kyotocabinet/lib"
@@ -1013,181 +976,167 @@ then
 
       AC_CHECK_HEADER(kclangc.h,
       AC_CHECK_LIB(kyotocabinet, kcdbopen,
-        [MUTTLIBS="$MUTTLIBS -lkyotocabinet"
+        [
+         MUTTLIBS="$MUTTLIBS -lkyotocabinet"
          AC_DEFINE(HAVE_KC, 1, [Kyoto Cabinet Support])
-         db_found=KyotoCabinet],
-        [CPPFLAGS="$OLDCPPFLAGS"
-         LDFLAGS="$OLDLDFLAGS"]))
-      if test "$db_requested" != auto && test "$db_found" != "$db_requested"
-      then
-        AC_MSG_ERROR([Kyoto Cabinet could not be used. Check config.log for details.])
-      fi
-    fi
-
-    dnl -- QDBM --
-    if test "$with_qdbm" != "no" && test $db_found = no \
-	    && test "$db_requested" = auto -o "$db_requested" = QDBM
-    then
-      if test -n "$with_qdbm" && test "$with_qdbm" != "yes"
-      then
-        if test -d $with_qdbm/include/qdbm; then
-          CPPFLAGS="$CPPFLAGS -I$with_qdbm/include/qdbm"
-	else
-          CPPFLAGS="$CPPFLAGS -I$with_qdbm/include"
-	fi
-        LDFLAGS="$LDFLAGS -L$with_qdbm/lib"
-      else
-         if test -d /usr/include/qdbm; then
-           CPPFLAGS="$CPPFLAGS -I/usr/include/qdbm"
-	 fi
-      fi
-
-      saved_LIBS="$LIBS"
-      AC_CHECK_HEADERS(villa.h)
-      AC_CHECK_LIB(qdbm, vlopen,
-        [MUTTLIBS="$MUTTLIBS -lqdbm"
-         AC_DEFINE(HAVE_QDBM, 1, [QDBM Support])
-         db_found=QDBM],
-        [CPPFLAGS="$OLDCPPFLAGS"
-         LDFLAGS="$OLDLDFLAGS"])
-      LIBS="$saved_LIBS"
-      if test "$db_requested" != auto && test "$db_found" != "$db_requested"
-      then
-        AC_MSG_ERROR([QDBM could not be used. Check config.log for details.])
-      fi
+         MUTT_LIB_OBJECTS="$MUTT_LIB_OBJECTS hcache-kc.o"
+         hcache_db_used="kyotocabinet $hcache_db_used"
+        ],[
+         CPPFLAGS="$OLDCPPFLAGS"
+         LDFLAGS="$OLDLDFLAGS"
+        ]))
     fi
 
     dnl -- GDBM --
-    if test x$with_gdbm != xno && test $db_found = no \
-	    && test "$db_requested" = auto -o "$db_requested" = GDBM
+    dnl -- Make sure the GDBM block comes before the QDBM one. QDBM provides
+    dnl -- the GDBM symbols in a compatibility layer (google for gdbm hovel).
+    dnl -- By doing this, we make sure the symbols are resolved in GDBM's
+    dnl -- library when both GDBM and QDBM are linked.
+    if test -n "$with_gdbm" && test "$with_gdbm" != "no"
     then
-        if test "$with_gdbm" != "yes"
-        then
-          CPPFLAGS="$CPPFLAGS -I$with_gdbm/include"
-          LDFLAGS="$LDFLAGS -L$with_gdbm/lib"
-        fi
-        saved_LIBS="$LIBS"
-        LIBS="$LIBS -lgdbm"
-        AC_CACHE_CHECK(for gdbm_open, ac_cv_gdbmopen,[
-            ac_cv_gdbmopen=no
-            AC_LINK_IFELSE([AC_LANG_PROGRAM([[#include <gdbm.h>]], [[gdbm_open(0,0,0,0,0);]])],[ac_cv_gdbmopen=yes],[])
-        ])
-        LIBS="$saved_LIBS"
-        if test "$ac_cv_gdbmopen" = yes
-        then
-          AC_DEFINE(HAVE_GDBM, 1, [GDBM Support])
-          MUTTLIBS="$MUTTLIBS -lgdbm"
-          db_found=GDBM
-        fi
-        if test "$db_requested" != auto && test "$db_found" != "$db_requested"
-        then
-          AC_MSG_ERROR([GDBM could not be used. Check config.log for details.])
-        fi
+      OLDCPPFLAGS="$CPPFLAGS"
+      OLDLDFLAGS="$LDFLAGS"
+      if test "$with_gdbm" != "yes"
+      then
+        CPPFLAGS="$CPPFLAGS -I$with_gdbm/include"
+        LDFLAGS="$LDFLAGS -L$with_gdbm/lib"
+      fi
+
+      AC_CHECK_HEADERS(gdbm.h,
+      AC_CHECK_LIB(gdbm, gdbm_open,
+        [
+         MUTTLIBS="$MUTTLIBS -lgdbm"
+         MUTT_LIB_OBJECTS="$MUTT_LIB_OBJECTS hcache-gdbm.o"
+         AC_DEFINE(HAVE_GDBM, 1, [GDBM Support])
+         hcache_db_used="gdbm $hcache_db_used"
+        ],[
+         CPPFLAGS="$OLDCPPFLAGS"
+         LDFLAGS="$OLDLDFLAGS"
+        ]))
     fi
 
-    dnl -- BDB --
-    ac_bdb_prefix="$with_bdb"
-    if test x$with_bdb != xno && test $db_found = no \
-	    && test "$db_requested" = auto -o "$db_requested" = BDB
+    dnl -- QDBM --
+    if test -n "$with_qdbm" && test "$with_qdbm" != "no"
     then
-        if test x$ac_bdb_prefix = xyes || test x$ac_bdb_prefix = x
-        then
-          ac_bdb_prefix="$mutt_cv_prefix /opt/csw/bdb4 /opt /usr/local /usr"
-        fi
-        for d in $ac_bdb_prefix; do
-            bdbpfx="$bdbpfx $d"
-            for v in BerkeleyDB.4.3 BerkeleyDB.4.2 BerkeleyDB.4.1; do
-                bdbpfx="$bdbpfx $d/$v"
-            done
-        done
-        BDB_VERSIONS="db-4 db4 db-5 db5 db-5.2 db5.2 db52 db-5.1 db5.1 db51 db-5.0 db5.0 db50 db-4.8 db4.8 db48 db-4.7 db4.7 db47 db-4.6 db4.6 db46 db-4.5 db4.5 db45 db-4.4 db4.4 db44 db-4.3 db4.3 db43 db-4.2 db4.2 db42 db-4.1 db4.1 db41 db ''"
-        AC_MSG_CHECKING([for BerkeleyDB > 4.0])
-        for d in $bdbpfx; do
-            BDB_INCLUDE_DIR=""
-            BDB_LIB_DIR=""
-            for v in / $BDB_VERSIONS; do
-                if test -r "$d/include/$v/db.h"; then
-                    BDB_INCLUDE_DIR="$d/include/$v"
-                    for bdblibdir in "$d/lib/$v" "$d/lib"; do
-                        test -d "$bdblibdir" || continue
-                        BDB_LIB_DIR="$bdblibdir"
-                        for l in `echo $BDB_VERSIONS`; do
-                            CPPFLAGS="$OLDCPPFLAGS -I$BDB_INCLUDE_DIR"
-                            LIBS="$OLDLIBS -L$BDB_LIB_DIR -l$l"
-                            AC_LINK_IFELSE([AC_LANG_PROGRAM([[
-                                #include <stdlib.h>
-                                #include <db.h>
-                            ]], [[
-                                DB *db = NULL;
-                                db->open(db,NULL,NULL,NULL,0,0,0);
-                            ]])],[
-                                ac_cv_dbcreate=yes
-                                BDB_LIB="$l"
-                                break
-                            ],[])
-                        done
-                        test x$ac_cv_dbcreate = xyes && break 2
-                    done
-                fi
-            done
-            test x$BDB_LIB != x && break
-        done
-        if test x$ac_cv_dbcreate = xyes
-        then
-            AC_MSG_RESULT(yes)
-            CPPFLAGS="$OLDCPPFLAGS -I$BDB_INCLUDE_DIR"
-            LIBS="$OLDLIBS -L$BDB_LIB_DIR -l$BDB_LIB"
-            AC_DEFINE(HAVE_DB4, 1, [Berkeley DB4 Support])
-            db_found=BDB
+      OLDCPPFLAGS="$CPPFLAGS"
+      OLDLDFLAGS="$LDFLAGS"
+      if test "$with_qdbm" != "yes"
+      then
+        if test -d $with_qdbm/include/qdbm; then
+          CPPFLAGS="$CPPFLAGS -I$with_qdbm/include/qdbm"
         else
-            AC_MSG_RESULT(no)
+          CPPFLAGS="$CPPFLAGS -I$with_qdbm/include"
         fi
+        LDFLAGS="$LDFLAGS -L$with_qdbm/lib"
+      else                                                                                                                                                      
+        if test -d /usr/include/qdbm; then                                                                                                                     
+            CPPFLAGS="$CPPFLAGS -I/usr/include/qdbm"                                                                                                             
+        fi     
+      fi
+
+      AC_CHECK_HEADERS(villa.h,
+      AC_CHECK_LIB(qdbm, vlopen,
+        [
+         MUTTLIBS="$MUTTLIBS -lqdbm"
+         MUTT_LIB_OBJECTS="$MUTT_LIB_OBJECTS hcache-qdbm.o"
+         AC_DEFINE(HAVE_QDBM, 1, [QDBM Support])
+         hcache_db_used="qdbm $hcache_db_used"
+        ],[
+         CPPFLAGS="$OLDCPPFLAGS"
+         LDFLAGS="$OLDLDFLAGS"
+        ]))
+    fi
+
+
+    dnl -- BDB --
+    ac_bdb_prefix="$mutt_cv_prefix /opt /usr/local /usr"
+    if test -n "$with_bdb" && test "$with_bdb" != "no"
+    then
+      OLDCPPFLAGS="$CPPFLAGS"
+      OLDLDFLAGS="$LDFLAGS"
+      if test "$with_bdb" != "yes"
+      then
+        ac_bdb_prefix="$with_bdb $mutt_cv_prefix"
+      fi
+      BDB_VERSIONS="db-5.3 db53 db-5 db5 db-4.8 db48 db-4 db4"
+      for d in $ac_bdb_prefix; do
+        for v in / $BDB_VERSIONS; do
+          AC_MSG_CHECKING([for BerkeleyDB in $d/include/$v])
+          if test -r "$d/include/$v/db.h"; then
+            BDB_INCLUDE_DIR="$d/include/$v"
+            BDB_INCLUDE_FILE="$d/include/$v/db.h"
+            BDB_VERSION_MAJOR=$(awk '/DB_VERSION_MAJOR/{print $NF}' \
+                $BDB_INCLUDE_FILE)
+            BDB_VERSION_MINOR=$(awk '/DB_VERSION_MINOR/{print $NF}' \
+                $BDB_INCLUDE_FILE)
+            if test -z "$BDB_VERSION_MAJOR" || \
+               test -z "$BDB_VERSION_MINOR"; then
+                AC_MSG_RESULT(yes, missing DB_VERSION_MAJOR / DB_VERSION_MINOR)
+                continue
+            fi
+            AC_MSG_RESULT(yes)
+            BDB_LIB_DIR="$d/lib/$v"
+            BDB_LIB_NAME="db-$BDB_VERSION_MAJOR.$BDB_VERSION_MINOR"
+            CPPFLAGS="$OLDCPPFLAGS -I$BDB_INCLUDE_DIR"
+            LDFLAGS="$OLDLDFLAGS -L$BDB_LIB_DIR"
+            AC_CHECK_LIB($BDB_LIB_NAME, db_env_create,
+              [
+                MUTTLIBS="$MUTTLIBS -l$BDB_LIB_NAME"
+                MUTT_LIB_OBJECTS="$MUTT_LIB_OBJECTS hcache-bdb.o"
+                AC_DEFINE(HAVE_BDB, 1, [Berkeley DB Support])
+                hcache_db_used="BDB $hcache_db_used"
+                BDB_FOUND=yes
+                break
+            ],[
+              CPPFLAGS="$OLDCPPFLAGS"
+              LDFLAGS="$OLDLDFLAGS"
+            ])
+          else
+            AC_MSG_RESULT(no)
+          fi
+        done
+        test "$BDB_FOUND" = "yes" && break
+      done
     fi
 
     dnl -- LMDB --
-    if test x$with_lmdb != xno && test $db_found = no \
-	    && test "$db_requested" = auto -o "$db_requested" = LMDB
+    if test -n "$with_lmdb" && test "$with_lmdb" != "no"
     then
-        if test "$with_lmdb" != "yes"
-        then
-          CPPFLAGS="$CPPFLAGS -I$with_lmdb/include"
-          LDFLAGS="$LDFLAGS -L$with_lmdb/lib"
-        fi
-        saved_LIBS="$LIBS"
-        LIBS="$LIBS -llmdb"
-        AC_CACHE_CHECK(for mdb_env_create, ac_cv_mdbenvcreate,[
-            ac_cv_mdbenvcreate=no
-            AC_LINK_IFELSE([AC_LANG_PROGRAM([[#include <lmdb.h>]], [[mdb_env_create(0);]])],[ac_cv_mdbenvcreate=yes],[])
-        ])
-        LIBS="$saved_LIBS"
-        if test "$ac_cv_mdbenvcreate" = yes
-        then
+      OLDCPPFLAGS="$CPPFLAGS"
+      OLDLDFLAGS="$LDFLAGS"
+      if test "$with_lmdb" != "yes"
+      then
+        CPPFLAGS="$CPPFLAGS -I$with_lmdb/include"
+        LDFLAGS="$LDFLAGS -L$with_lmdb/lib"
+      fi
+      AC_CHECK_HEADERS(lmdb.h,
+      AC_CHECK_LIB(lmdb, mdb_env_create,
+        [
           AC_DEFINE(HAVE_LMDB, 1, [LMDB Support])
           MUTTLIBS="$MUTTLIBS -llmdb"
-          db_found=LMDB
-        fi
-        if test "$db_requested" != auto && test "$db_found" != "$db_requested"
-        then
-          AC_MSG_ERROR([LMDB could not be used. Check config.log for details.])
-        fi
+          MUTT_LIB_OBJECTS="$MUTT_LIB_OBJECTS hcache-lmdb.o"
+          hcache_db_used="lmdb $hcache_db_used"
+        ],[
+         CPPFLAGS="$OLDCPPFLAGS"
+         LDFLAGS="$OLDLDFLAGS"
+        ]))
     fi
 
-    if test $db_found = no
+    if test -z "$hcache_db_used"
     then
-        AC_MSG_ERROR([You need Tokyo Cabinet, Kyoto Cabinet, QDBM, GDBM, Berkeley DB4 or LMDB for hcache])
+        AC_MSG_ERROR([You need Tokyo Cabinet, Kyoto Cabinet, QDBM, GDBM, Berkeley DB or LMDB for hcache])
     fi
 fi
-hcache_db_used=$db_found
 dnl -- end cache --
 
-AM_CONDITIONAL(BUILD_HCACHE, test x$db_found != xno)
+AM_CONDITIONAL(BUILD_HCACHE, test -n "$hcache_db_used")
 
 if test "$need_md5" = "yes"
 then
   MUTT_LIB_OBJECTS="$MUTT_LIB_OBJECTS md5.o"
 fi
 
-if test x$db_found != xno ; then
+if test -n "$hcache_db_used"; then
   MUTT_MD5="mutt_md5$EXEEXT"
 fi
 AC_SUBST(MUTT_MD5)
@@ -1485,6 +1434,13 @@ AC_ARG_ENABLE(doc, AS_HELP_STRING([--disable-doc],[Do not build the documentatio
 ])
 AM_CONDITIONAL(BUILD_DOC, test x$do_build_doc != xno)
 
+AC_ARG_ENABLE(po, AS_HELP_STRING([--disable-po],[Do not build the translation messages]),
+[       if test x$enableval = xno ; then
+                do_build_po=no
+        fi
+])
+AM_CONDITIONAL(BUILD_PO, test x$do_build_po != xno)
+
 AC_ARG_ENABLE(full_doc,
 	      AS_HELP_STRING([--disable-full-doc],[Omit disabled variables]),
 [       if test x$enableval = xno ; then
@@ -1509,6 +1465,7 @@ AC_MSG_NOTICE([Summary of build options:
   CFlags:            ${CFLAGS} ${CPPFLAGS}
   LDFlags:           ${LDFLAGS}
   Libs:              ${LIBS}
+  Mutt libs:         ${MUTTLIBS}
 
   GPGME:             $enable_gpgme
   PGP:               $enable_pgp
@@ -1516,5 +1473,5 @@ AC_MSG_NOTICE([Summary of build options:
   Sidebar:           $enable_sidebar
   Notmuch:           $enable_notmuch
   Compressed Folder: $enable_compressed
-  Header Cache:      $hcache_db_used
+  Header Cache (s):  $hcache_db_used
 ])

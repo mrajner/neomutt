@@ -1652,8 +1652,8 @@ IMAP_STATUS* imap_mboxcache_get (IMAP_DATA* idata, const char* mbox, int create)
   IMAP_STATUS scache;
 #ifdef USE_HCACHE
   header_cache_t *hc = NULL;
-  unsigned int *uidvalidity = NULL;
-  unsigned int *uidnext = NULL;
+  void *uidvalidity = NULL;
+  void *uidnext = NULL;
 #endif
 
   for (cur = idata->mboxcache; cur; cur = cur->next)
@@ -1680,24 +1680,25 @@ IMAP_STATUS* imap_mboxcache_get (IMAP_DATA* idata, const char* mbox, int create)
   hc = imap_hcache_open (idata, mbox);
   if (hc)
   {
-    uidvalidity = mutt_hcache_fetch_raw (hc, "/UIDVALIDITY", imap_hcache_keylen);
-    uidnext = mutt_hcache_fetch_raw (hc, "/UIDNEXT", imap_hcache_keylen);
-    mutt_hcache_close (hc);
+    uidvalidity = mutt_hcache_fetch_raw (hc, "/UIDVALIDITY", 12);
+    uidnext = mutt_hcache_fetch_raw (hc, "/UIDNEXT", 8);
     if (uidvalidity)
     {
       if (!status)
       {
-        FREE (&uidvalidity);
-        FREE (&uidnext);
+        mutt_hcache_free (hc, &uidvalidity);
+        mutt_hcache_free (hc, &uidnext);
+        mutt_hcache_close (hc);
         return imap_mboxcache_get (idata, mbox, 1);
       }
-      status->uidvalidity = *uidvalidity;
-      status->uidnext = uidnext ? *uidnext: 0;
+      status->uidvalidity = *(unsigned int *)uidvalidity;
+      status->uidnext = uidnext ? *(unsigned int *)uidnext: 0;
       dprint (3, (debugfile, "mboxcache: hcache uidvalidity %d, uidnext %d\n",
                   status->uidvalidity, status->uidnext));
     }
-    FREE (&uidvalidity);
-    FREE (&uidnext);
+    mutt_hcache_free (hc, &uidvalidity);
+    mutt_hcache_free (hc, &uidnext);
+    mutt_hcache_close (hc);
   }
 #endif
 
@@ -2189,4 +2190,5 @@ struct mx_ops mx_imap_ops = {
   .commit_msg = imap_commit_message,
   .open_new_msg = imap_open_new_message,
   .check = imap_check_mailbox_reopen,
+  .sync = NULL,      /* imap syncing is handled by imap_sync_mailbox */
 };

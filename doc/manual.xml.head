@@ -2286,6 +2286,15 @@ linkend="mime-forward">$mime_forward</link> is set.
 </para>
 
 <para>
+By default a forwarded message does not reference the messages it
+contains. When <link linkend="forward-references">$forward_references</link>
+is set, a forwarded message includes the <quote>In-Reply-To:</quote>
+and <quote>References:</quote> headers, just like a reply would. Hence
+the forwarded message becomes part of the original thread instead of
+starting a new one.
+</para>
+
+<para>
 Editing the message to forward follows the same procedure as sending or
 replying to a message does.
 </para>
@@ -2364,10 +2373,10 @@ See also the <link linkend="postpone">$postpone</link> quad-option.
     <tbody>
       <row><entry>$XDG_CONFIG_DIRS/neomutt/config</entry></row>
       <row><entry>/etc/NeoMuttrc</entry></row>
-      <row><entry>/etc/Muttrc-1.7.1-neo</entry></row>
+      <row><entry>/etc/Muttrc-20161104</entry></row>
       <row><entry>/etc/Muttrc</entry></row>
-      <row><entry>/share/mutt/Muttrc-1.7.1-neo</entry></row>
-      <row><entry>/share/mutt/Muttrc</entry></row>
+      <row><entry>/usr/share/mutt/Muttrc-20161104</entry></row>
+      <row><entry>/usr/share/mutt/Muttrc</entry></row>
     </tbody>
   </tgroup>
 </table>
@@ -2397,10 +2406,11 @@ See also the <link linkend="postpone">$postpone</link> quad-option.
       <row><entry>$XDG_CONFIG_HOME/neomutt/config</entry></row>
       <row><entry>~/.neomuttrc</entry></row>
       <row><entry>~/.mutt/neomuttrc</entry></row>
-      <row><entry>~/.muttrc-1.7.1-neo</entry></row>
+      <row><entry>~/.muttrc-20161104</entry></row>
       <row><entry>~/.muttrc</entry></row>
-      <row><entry>~/.mutt/muttrc-1.7.1-neo</entry></row>
+      <row><entry>~/.mutt/muttrc-20161104</entry></row>
       <row><entry>~/.mutt/muttrc</entry></row>
+      <row><entry>~/.muttrc</entry></row>
     </tbody>
   </tgroup>
 </table>
@@ -2987,8 +2997,8 @@ addition, <emphasis>key</emphasis> may be a symbolic name as shown in
 <row><entry>&lt;backtab&gt;</entry><entry>backtab / shift-tab</entry></row>
 <row><entry>\r</entry><entry>carriage return</entry></row>
 <row><entry>\n</entry><entry>newline</entry></row>
-<row><entry>\e</entry><entry>escape</entry></row>
-<row><entry>&lt;esc&gt;</entry><entry>escape</entry></row>
+<row><entry>\e</entry><entry>escape/alt</entry></row>
+<row><entry>&lt;esc&gt;</entry><entry>escape/alt</entry></row>
 <row><entry>&lt;up&gt;</entry><entry>up arrow</entry></row>
 <row><entry>&lt;down&gt;</entry><entry>down arrow</entry></row>
 <row><entry>&lt;left&gt;</entry><entry>left arrow</entry></row>
@@ -5009,6 +5019,29 @@ configuration command, preventing Mutt from recording the
 <command>macro</command>'s commands into its history.
 </para>
 
+<para>
+You can restrict address pattern matching to aliases that you have
+defined with the "@" modifier.  This example matches messages whose
+recipients are all from Germany, and who are known to your alias list.
+</para>
+
+<para>
+<screen>
+^@~C \.de$
+</screen>
+</para>
+
+<para>
+To match any defined alias, use a regular expression that matches any
+string.  This example matches messages whose senders are known aliases.
+</para>
+
+<para>
+<screen>
+@~f .
+</screen>
+</para>
+
 </sect3>
 
 </sect2>
@@ -6150,6 +6183,27 @@ dates shown in the main index.
 
 </sect2>
 
+</sect1>
+
+<sect1 id="markmsg">
+<title>Marking Messages</title>
+
+<para>
+There are times that it's useful to ask Mutt to "remember" which message
+you're currently looking at, while you move elsewhere in your mailbox.
+You can do this with the <quote>mark-message</quote> operator, which
+is bound to the <quote>~</quote> key by default.  Press this key to
+enter an identifier for the marked message. When you want to return to
+this message, press <quote>'</quote> and the name that you previously
+entered.
+</para>
+
+<para>
+(Message marking is really just a shortcut for defining a macro
+that returns you to the current message by searching for its
+Message-ID.  You can choose a different prefix by setting the <link
+linkend="mark-macro-prefix">$mark_macro_prefix</link> variable.)
+</para>
 </sect1>
 
 <sect1 id="tags">
@@ -8800,6 +8854,14 @@ in lower performance), but one file per folder if it points to a
 directory.
 </para>
 
+<para>
+Additionally, <link linkend="header-cache-backend">$header_cache_backend</link>
+can be used to specify which backend to use. The list of available backends can
+be specified at configure time with a set of --with-&lt;backend&gt; options.
+Currently, the following backends are supported: tokyocabinet, kyotocabinet,
+qdbm, gdbm, bdb, lmdb.
+</para>
+
 </sect2>
 
 <sect2 id="body-caching">
@@ -9186,8 +9248,9 @@ bind index,pager @ compose-to-sender
     <para>
       The shell-command must contain two placeholders for filenames:
       <literal>%f</literal> and <literal>%t</literal>.  These represent
-      <quote>from</quote> and <quote>to</quote> filenames.  It's a good idea to
-      put quotes around these placeholders.
+      <quote>from</quote> and <quote>to</quote> filenames.  These placeholders
+      should be placed inside single-quotes to prevent unintended shell
+      expansions.
     </para>
 
     <para>
@@ -9463,14 +9526,6 @@ close-hook  '\.gpg$' &quot;gpg --encrypt --recipient YourGpgUserIdOrKeyId &lt; '
       <listitem><para><link linkend="mbox-type">$mbox_type</link></para></listitem>
       <listitem><para><link linkend="save-empty">$save_empty</link></para></listitem>
       <listitem><para><link linkend="folder-hook">folder-hook</link></para></listitem>
-    </itemizedlist>
-  </sect2>
-
-  <sect2 id="compress-known-bugs">
-    <title>Known Bugs</title>
-
-    <itemizedlist>
-      <listitem><para>The Compressed Folder hooks cannot deal with filenames that contains quotes/apostrophes.</para></listitem>
     </itemizedlist>
   </sect2>
 
@@ -10149,6 +10204,125 @@ set attach_keyword = &quot;\\&lt;attach(|ed|ments?)\\&gt;&quot;
     <listitem><para>Richard Russon <email>rich@flatcap.org</email></para></listitem>
     <listitem><para>Johannes Wei&szlig;l <email>jargon@molb.org</email></para></listitem>
     <listitem><para>Steven! Ragnar&ouml;k <email>steven@nuclearsandwich.com</email></para></listitem>
+    </itemizedlist>
+  </sect2>
+</sect1>
+
+<sect1 id="global-hooks">
+  <title>Global Hooks</title>
+  <subtitle>Define actions to run globally within Mutt</subtitle>
+
+  <sect2 id="global-hooks-intro">
+    <title>Introduction</title>
+
+    <para>
+      These hooks are called when global events take place in Mutt.
+    </para>
+
+    <itemizedlist>
+      <title>Run a command...</title>
+      <listitem><para><emphasis role="bold">timeout-hook</emphasis> - periodically</para></listitem>
+      <listitem><para><emphasis role="bold">startup-hook</emphasis> - when mutt starts up, before opening the first mailbox</para></listitem>
+      <listitem><para><emphasis role="bold">shutdown-hook</emphasis> - mutt shuts down, before closing the last mailbox</para></listitem>
+    </itemizedlist>
+
+    <sect3 id="timeout-hook-intro">
+      <title>Timeout Hook</title>
+      <subtitle>Run a command periodically</subtitle>
+      <para><emphasis role="bold">Since:</emphasis> NeoMutt 2016-08-08</para>
+      <para>
+        This feature implements a new hook that is called periodically when Mutt
+        checks for new mail. This hook is called every <literal>$timeout</literal> seconds.
+      </para>
+    </sect3>
+
+    <sect3 id="startup-hook-intro">
+      <title>Startup Hook</title>
+      <subtitle>Run a command when mutt starts up, before opening the first mailbox</subtitle>
+      <para><emphasis role="bold">Since:</emphasis> NeoMutt 2016-11-25</para>
+      <para>
+        This feature implements a new hook that is called when Mutt first
+        starts up, but before opening the first mailbox.  This is most likely
+        to be useful to users of <link linkend="notmuch">notmuch</link>.
+      </para>
+    </sect3>
+
+    <sect3 id="shutdown-hook">
+      <title>Shutdown Hook</title>
+      <subtitle>Run a command when mutt shuts down, before closing the last mailbox</subtitle>
+      <para><emphasis role="bold">Since:</emphasis> NeoMutt 2016-11-25</para>
+      <para>
+        This feature implements a hook that is called when Mutt shuts down, but
+        before closing the first mailbox. This is most likely to be useful to
+        users of <link linkend="notmuch">notmuch</link>.
+      </para>
+    </sect3>
+  </sect2>
+
+  <sect2 id="global-hooks-commands">
+    <title>Commands</title>
+
+    <cmdsynopsis>
+      <command>timeout-hook</command>
+      <arg choice="plain">
+        <replaceable class="parameter">MUTT-COMMAND</replaceable>
+      </arg>
+    </cmdsynopsis>
+    <cmdsynopsis>
+      <command>startup-hook</command>
+      <arg choice="plain">
+        <replaceable class="parameter">MUTT-COMMAND</replaceable>
+      </arg>
+    </cmdsynopsis>
+    <cmdsynopsis>
+      <command>shutdown-hook</command>
+      <arg choice="plain">
+        <replaceable class="parameter">MUTT-COMMAND</replaceable>
+      </arg>
+    </cmdsynopsis>
+  </sect2>
+
+  <sect2 id="global-hooks-muttrc">
+    <title>Muttrc</title>
+<screen>
+<emphasis role="comment"># Example NeoMutt config file for the global hooks feature.
+
+# --------------------------------------------------------------------------
+# COMMANDS - shown with an example argument
+# --------------------------------------------------------------------------
+
+# After $timeout seconds of inactivity, run this mutt command</emphasis>
+timeout-hook 'exec sync-mailbox'
+
+<emphasis role="comment"># When mutt first loads, run this mutt command</emphasis>
+startup-hook 'exec sync-mailbox'
+
+<emphasis role="comment"># When mutt quits, run this mutt command</emphasis>
+shutdown-hook 'exec sync-mailbox'
+
+<emphasis role="comment"># vim: syntax=muttrc</emphasis>
+</screen>
+  </sect2>
+
+  <sect2 id="timeout-see-also">
+    <title>See Also</title>
+
+    <itemizedlist>
+      <listitem><para><link linkend="timeout">$timeout</link></para></listitem>
+    </itemizedlist>
+  </sect2>
+
+  <sect2 id="global-hooks-known-bugs">
+    <title>Known Bugs</title>
+    <para>None</para>
+  </sect2>
+
+  <sect2 id="global-hooks-credits">
+    <title>Credits</title>
+    <itemizedlist>
+    <listitem><para>Armin Wolfermann <email>armin@wolfermann.org</email></para></listitem>
+    <listitem><para>Richard Russon <email>rich@flatcap.org</email></para></listitem>
+    <listitem><para>Thomas Adam <email>thomas@xteddy.org</email></para></listitem>
     </itemizedlist>
   </sect2>
 </sect1>
@@ -13387,77 +13561,6 @@ color status brightwhite default 'Mutt: ([^ ]+)' 1
   </sect2>
 </sect1>
 
-<sect1 id="timeout-hook">
-  <title>Timeout Feature</title>
-  <subtitle>Run a command periodically</subtitle>
-
-  <sect2 id="timeout-support">
-    <title>Support</title>
-
-    <para><emphasis role="bold">Since:</emphasis> NeoMutt 2016-08-08</para>
-    <para><emphasis role="bold">Dependencies:</emphasis> None</para>
-  </sect2>
-
-  <sect2 id="timeout-intro">
-    <title>Introduction</title>
-
-    <para>
-      This feature implements a new hook that is called periodically when Mutt
-      checks for new mail. This hook is called every <literal>$timeout</literal> seconds.
-    </para>
-  </sect2>
-
-  <sect2 id="timeout-commands">
-    <title>Commands</title>
-    <cmdsynopsis>
-      <command>timeout-hook</command>
-      <arg choice="plain">
-        <replaceable class="parameter">.</replaceable>
-      </arg>
-      <arg choice="plain">
-        <replaceable class="parameter">MUTT-COMMAND</replaceable>
-      </arg>
-    </cmdsynopsis>
-  </sect2>
-
-  <sect2 id="timeout-muttrc">
-    <title>Muttrc</title>
-<screen>
-<emphasis role="comment"># Example NeoMutt config file for the timeout feature.
-
-# --------------------------------------------------------------------------
-# COMMANDS - shown with an example arguments
-# --------------------------------------------------------------------------
-
-# After $timeout seconds of inactivity, run this mutt command</emphasis>
-timeout-hook . 'exec sync-mailbox'
-
-<emphasis role="comment"># vim: syntax=muttrc</emphasis>
-</screen>
-  </sect2>
-
-  <sect2 id="timeout-see-also">
-    <title>See Also</title>
-
-    <itemizedlist>
-      <listitem><para><link linkend="timeout">$timeout</link></para></listitem>
-    </itemizedlist>
-  </sect2>
-
-  <sect2 id="timeout-known-bugs">
-    <title>Known Bugs</title>
-    <para>None</para>
-  </sect2>
-
-  <sect2 id="timeout-credits">
-    <title>Credits</title>
-    <itemizedlist>
-    <listitem><para>Armin Wolfermann <email>armin@wolfermann.org</email></para></listitem>
-    <listitem><para>Richard Russon <email>rich@flatcap.org</email></para></listitem>
-    </itemizedlist>
-  </sect2>
-</sect1>
-
 <sect1 id="tls-sni">
   <title>TLS-SNI Feature</title>
   <subtitle>Negotiate with a server for a TSL/SSL certificate</subtitle>
@@ -13622,20 +13725,20 @@ openssl s_client -host &lt;imap server&gt; -port &lt;port&gt; -tls1 -servername 
     <title>Muttrc</title>
 <screen>
 <emphasis role="comment"># Example Mutt config file for the 'trash' feature.
- 
+
 # This feature defines a new 'trash' folder.
 # When mail is deleted it will be moved to this folder.
- 
+
 # Folder in which to put deleted emails</emphasis>
 set trash='+Trash'
 set trash='/home/flatcap/Mail/Trash'
- 
+
 <emphasis role="comment"># The default delete key 'd' will move an email to the 'trash' folder
 # Bind 'D' to REALLY delete an email</emphasis>
 bind index D purge-message
- 
+
 <emphasis role="comment"># Note: Deleting emails from the 'trash' folder will REALLY delete them.
- 
+
 # vim: syntax=muttrc</emphasis>
 </screen>
   </sect2>

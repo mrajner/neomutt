@@ -901,7 +901,8 @@ void mutt_browser_highlight_default (struct browser_state *state, MUTTMENU *menu
    */
   if ((mutt_strcmp (state->entry[0].desc, "..")  == 0) ||
       (mutt_strcmp (state->entry[0].desc, "../") == 0))
-    menu->current = 1;
+    /* Skip the first entry, unless there's only one entry. */
+    menu->current = (menu->max > 1);
   else
     menu->current = 0;
 }
@@ -1720,8 +1721,11 @@ void _mutt_select_file (char *f, size_t flen, int flags, char ***files, int *num
 	  int reverse = (i == OP_SORT_REVERSE);
 	  
 	  switch (mutt_multi_choice ((reverse) ?
+	      /* L10N: The highlighted letters must match the "Sort" options */
 	      _("Reverse sort by (d)ate, (a)lpha, si(z)e, d(e)scription, (c)ount, ne(w) count, or do(n)'t sort? ") :
+	      /* L10N: The highlighted letters must match the "Reverse Sort" options */
 	      _("Sort by (d)ate, (a)lpha, si(z)e, d(e)scription, (c)ount, ne(w) count, or do(n)'t sort? "),
+	      /* L10N: These must match the highlighted letters from "Sort" and "Reverse Sort" */
 	      _("dazecwn")))
 	  {
 	    case -1: /* abort */

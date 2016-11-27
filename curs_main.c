@@ -127,6 +127,71 @@ static const char *No_visible = N_("No visible messages.");
 static char *tsl = "\033]0;";
 static char *fsl = "\007";
 
+/**
+ * collapse/uncollapse all threads
+ * @param menu   current menu
+ * @param toggle toggle collapsed state
+ *
+ * This function is called by the OP_MAIN_COLLAPSE_ALL command and on folder
+ * enter if the OPTCOLLAPSEALL option is set. In the first case, the @toggle
+ * parameter is 1 to actually toggle collapsed/uncollapsed state on all
+ * threads. In the second case, the @toggle parameter is 0, actually turning
+ * this function into a one-way collapse.
+ */
+static void collapse_all(MUTTMENU *menu, int toggle)
+{
+  HEADER *h, *base;
+  THREAD *thread, *top;
+  int final;
+
+  if (!Context || (Context->msgcount == 0))
+    return;
+
+  /* Figure out what the current message would be after folding / unfolding,
+   * so that we can restore the cursor in a sane way afterwards. */
+  if (CURHDR->collapsed && toggle)
+    final = mutt_uncollapse_thread (Context, CURHDR);
+  else if (option (OPTCOLLAPSEUNREAD) || !UNREAD (CURHDR))
+    final = mutt_collapse_thread (Context, CURHDR);
+  else
+    final = CURHDR->virtual;
+
+  base = Context->hdrs[Context->v2r[final]];
+
+  /* Iterate all threads, perform collapse/uncollapse as needed */
+  top = Context->tree;
+  Context->collapsed = toggle ? !Context->collapsed : 1;
+  while ((thread = top) != NULL)
+  {
+    while (!thread->message)
+      thread = thread->child;
+    h = thread->message;
+
+    if (h->collapsed != Context->collapsed)
+    {
+      if (h->collapsed)
+        mutt_uncollapse_thread (Context, h);
+      else if (option (OPTCOLLAPSEUNREAD) || !UNREAD (h))
+        mutt_collapse_thread (Context, h);
+    }
+    top = top->next;
+  }
+
+  /* Restore the cursor */
+  mutt_set_virtual (Context);
+  int j;
+  for (j = 0; j < Context->vcount; j++)
+  {
+    if (Context->hdrs[Context->v2r[j]]->index == base->index)
+    {
+      menu->current = j;
+      break;
+    }
+  }
+
+  menu->redraw = REDRAW_INDEX | REDRAW_STATUS;
+}
+
 /* terminal status capability check. terminfo must have been initialized. */
 short mutt_ts_capability(void)
 {
@@ -204,12 +269,15 @@ void mutt_ts_icon(char *str)
 
 void index_make_entry (char *s, size_t l, MUTTMENU *menu, int num)
 {
-  if (!Context || !menu || (num < 0))
+  if (!Context || !menu || (num < 0) || (num >= Context->hdrmax))
+    return;
+
+  HEADER *h = Context->hdrs[Context->v2r[num]];
+  if (!h)
     return;
 
   format_flag flag = MUTT_FORMAT_MAKEPRINT | MUTT_FORMAT_ARROWCURSOR | MUTT_FORMAT_INDEX;
   int edgemsgno, reverse = Sort & SORT_REVERSE;
-  HEADER *h = Context->hdrs[Context->v2r[num]];
   THREAD *tmp;
 
   if ((Sort & SORT_MASK) == SORT_THREADS && h->tree)
@@ -710,6 +778,9 @@ static int main_change_folder(MUTTMENU *menu, int op, char *buf, size_t bufsz,
   else
     menu->current = 0;
 
+  if (((Sort & SORT_MASK) == SORT_THREADS) && option (OPTCOLLAPSEALL))
+    collapse_all (menu, 0);
+
 #ifdef USE_SIDEBAR
         mutt_sb_set_open_buffy ();
 #endif
@@ -781,6 +852,12 @@ int mutt_index_menu (void)
 
   if (!attach_msg)
     mutt_buffy_check(1); /* force the buffy check after we enter the folder */
+
+  if (((Sort & SORT_MASK) == SORT_THREADS) && option (OPTCOLLAPSEALL))
+  {
+    collapse_all (menu, 0);
+    menu->redraw = REDRAW_FULL;
+  }
 
   FOREVER
   {
@@ -1433,6 +1510,8 @@ int mutt_index_menu (void)
 	  int check;
 
 	  oldcount = Context ? Context->msgcount : 0;
+
+	  mutt_startup_shutdown_hook (MUTT_SHUTDOWNHOOK);
 
 	  if (!Context || (check = mx_close_mailbox (Context, &index_hint)) == 0)
 	    done = 1;
@@ -2501,54 +2580,10 @@ int mutt_index_menu (void)
 
         if ((Sort & SORT_MASK) != SORT_THREADS)
         {
-	  mutt_error _("Threading is not enabled.");
-	  break;
-	}
-
-        {
-	  HEADER *h, *base;
-	  THREAD *thread, *top;
-	  int final;
-
-	  if (CURHDR->collapsed)
-	    final = mutt_uncollapse_thread (Context, CURHDR);
-	  else if (option (OPTCOLLAPSEUNREAD) || !UNREAD (CURHDR))
-	    final = mutt_collapse_thread (Context, CURHDR);
-	  else
-	    final = CURHDR->virtual;
-
-	  base = Context->hdrs[Context->v2r[final]];
-
-	  top = Context->tree;
-	  Context->collapsed = !Context->collapsed;
-	  while ((thread = top) != NULL)
-	  {
-	    while (!thread->message)
-	      thread = thread->child;
-	    h = thread->message;
-
-	    if (h->collapsed != Context->collapsed)
-	    {
-	      if (h->collapsed)
-		mutt_uncollapse_thread (Context, h);
-	      else if (option (OPTCOLLAPSEUNREAD) || !UNREAD (h))
-		mutt_collapse_thread (Context, h);
-	    }
-	    top = top->next;
-	  }
-
-	  mutt_set_virtual (Context);
-	  for (j = 0; j < Context->vcount; j++)
-	  {
-	    if (Context->hdrs[Context->v2r[j]]->index == base->index)
-	    {
-	      menu->current = j;
-	      break;
-	    }
-	  }
-
-	  menu->redraw = REDRAW_INDEX | REDRAW_STATUS;
-	}
+          mutt_error _("Threading is not enabled.");
+          break;
+        }
+        collapse_all (menu, 1);
 	break;
 
       /* --------------------------------------------------------------------
@@ -2858,6 +2893,44 @@ int mutt_index_menu (void)
 	  }
 	  menu->redraw = REDRAW_INDEX | REDRAW_STATUS;
 	}
+	break;
+
+
+      case OP_MARK_MSG:
+
+	CHECK_MSGCOUNT;
+	CHECK_VISIBLE;
+	if (CURHDR->env->message_id)
+	{
+	  char str[STRING], macro[STRING];
+	  char buf[128];
+
+	  buf[0] = '\0';
+          /* L10N: This is the prompt for <mark-message>.  Whatever they
+             enter will be prefixed by $mark_macro_prefix and will become
+             a macro hotkey to jump to the currently selected message. */
+	  if (!mutt_get_field (_("Enter macro stroke: "), buf, sizeof(buf),
+	  		       MUTT_CLEAR) && buf[0])
+	  {
+	    snprintf(str, sizeof(str), "%s%s", MarkMacroPrefix, buf);
+	    snprintf(macro, sizeof(macro),
+		     "<search>~i \"%s\"\n", CURHDR->env->message_id);
+            /* L10N: "message hotkey" is the key bindings menu description of a
+               macro created by <mark-message>. */
+	    km_bind(str, MENU_MAIN, OP_MACRO, macro, _("message hotkey"));
+
+            /* L10N: This is echoed after <mark-message> creates a new hotkey
+               macro.  %s is the hotkey string ($mark_macro_prefix followed
+               by whatever they typed at the prompt.) */
+	    snprintf(buf, sizeof(buf), _("Message bound to %s."), str);
+	    mutt_message(buf);
+	    dprint (1, (debugfile, "Mark: %s => %s\n", str, macro));
+	  }
+	}
+	else
+          /* L10N: This error is printed if <mark-message> cannot find a
+             Message-ID for the currently selected message in the index. */
+	  mutt_error _("No message ID to macro.");
 	break;
 
       case OP_RECALL_MESSAGE:

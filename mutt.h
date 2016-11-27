@@ -165,6 +165,9 @@ typedef enum
 #define MUTT_CLOSEHOOK   (1<<14)
 #endif
 #define MUTT_TIMEOUTHOOK (1<<15)
+#define MUTT_STARTUPHOOK (1<<16)
+#define MUTT_SHUTDOWNHOOK (1<<17)
+#define MUTT_GLOBALHOOK   (1<<18)
 
 /* tree characters for linearize_tree and print_enriched_string */
 #define MUTT_TREE_LLCORNER      1
@@ -380,6 +383,7 @@ enum
   OPTBRAILLEFRIENDLY,
   OPTCHECKMBOXSIZE,
   OPTCHECKNEW,
+  OPTCOLLAPSEALL,
   OPTCOLLAPSEUNREAD,
   OPTCONFIRMAPPEND,
   OPTCONFIRMCREATE,
@@ -391,10 +395,12 @@ enum
   OPTENVFROM,
   OPTFASTREPLY,
   OPTFCCCLEAR,
+  OPTFLAGSAFE,
   OPTFOLLOWUPTO,
   OPTFORCENAME,
   OPTFORWDECODE,
   OPTFORWQUOTE,
+  OPTFORWREF,
 #ifdef USE_HCACHE
   OPTHCACHEVERIFY,
 #if defined(HAVE_QDBM) || defined(HAVE_TC) || defined(HAVE_KC)
@@ -939,6 +945,7 @@ typedef struct pattern_t
   unsigned int stringmatch : 1;
   unsigned int groupmatch : 1;
   unsigned int ign_case : 1;		/* ignore case for local stringmatch searches */
+  unsigned int isalias : 1;
   int min;
   int max;
   struct pattern_t *next;
@@ -988,6 +995,7 @@ struct mx_ops
   int (*open_append) (struct _context *, int flags);
   int (*close) (struct _context *);
   int (*check) (struct _context *ctx, int *index_hint);
+  int (*sync) (struct _context *ctx, int *index_hint);
   int (*open_msg) (struct _context *, struct _message *, int msgno);
   int (*close_msg) (struct _context *, struct _message *);
   int (*commit_msg) (struct _context *, struct _message *);

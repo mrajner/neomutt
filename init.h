@@ -37,7 +37,8 @@
 #define DT_RX		7 /* regular expressions */
 #define DT_MAGIC	8 /* mailbox type */
 #define DT_SYN		9 /* synonym for another variable */
-#define DT_ADDR	       10 /* e-mail address */
+#define DT_ADDR		10 /* e-mail address */
+#define DT_HCACHE	11 /* header cache backend */
 
 #define DTYPE(x) ((x) & DT_MASK)
 
@@ -91,9 +92,14 @@ struct option_t MuttVars[] = {
   /*
   ** .pp
   ** If set to \fIyes\fP, when composing messages containing the regular expression
-  ** specified by $attach_keyword (default is "\\<attach(|ed|ments?)\\>") and no attachments
-  ** are given, composition will be aborted. If set to \fIno\fP, composing
-  ** messages as such will never be aborted.
+  ** specified by $attach_keyword and no attachments ** are given, composition
+  ** will be aborted. If set to \fIno\fP, composing ** messages as such will never
+  ** be aborted.
+  ** .pp
+  ** Example:
+  ** .ts
+  ** set attach_keyword = "\\<attach(|ed|ments?)\\>"
+  ** .te
   */
   { "abort_nosubject",	DT_QUAD, R_NONE, OPT_SUBJECT, MUTT_ASKYES },
   /*
@@ -251,6 +257,7 @@ struct option_t MuttVars[] = {
   ** .dt %D  .dd deleted flag
   ** .dt %d  .dd description
   ** .dt %e  .dd MIME content-transfer-encoding
+  ** .dt %F  .dd filename for content-disposition header
   ** .dt %f  .dd filename
   ** .dt %I  .dd disposition (``I'' for inline, ``A'' for attachment)
   ** .dt %m  .dd major MIME type
@@ -848,6 +855,11 @@ struct option_t MuttVars[] = {
   ** signed.
   ** (PGP only)
   */
+  { "flag_safe", DT_BOOL, R_NONE, OPTFLAGSAFE, 0 },
+  /*
+  ** .pp
+  ** If set, flagged messages cannot be deleted.
+  */
   { "folder",		DT_PATH, R_NONE, UL &Maildir, UL "~/Mail" },
   /*
   ** .pp
@@ -982,6 +994,14 @@ struct option_t MuttVars[] = {
   { "forw_quote",	DT_SYN,  R_NONE, UL "forward_quote", 0 },
   /*
   */
+  { "forward_references", DT_BOOL, R_NONE, OPTFORWREF, 0 },
+  /*
+  ** .pp
+  ** When \fIset\fP, forwarded messages set the ``In-Reply-To:'' and
+  ** ``References:'' headers in the same way as normal replies would. Hence the
+  ** forwarded message becomes part of the original thread instead of starting
+  ** a new one.
+  */
   { "from",		DT_ADDR, R_NONE, UL &From, UL 0 },
   /*
   ** .pp
@@ -1057,6 +1077,11 @@ struct option_t MuttVars[] = {
   ** Header caching can greatly improve speed when opening POP, IMAP
   ** MH or Maildir folders, see ``$caching'' for details.
   */
+  { "header_cache_backend", DT_HCACHE, R_NONE, UL &HeaderCacheBackend, UL 0 },
+  /*
+  ** .pp
+  ** This variable specifies the header cache backend.
+  */
 #if defined(HAVE_QDBM) || defined(HAVE_TC) || defined(HAVE_KC)
   { "header_cache_compress", DT_BOOL, R_NONE, OPTHCACHECOMPRESS, 1 },
   /*
@@ -1070,7 +1095,7 @@ struct option_t MuttVars[] = {
   ** cached folders.
   */
 #endif /* HAVE_QDBM */
-#if defined(HAVE_GDBM) || defined(HAVE_DB4)
+#if defined(HAVE_GDBM) || defined(HAVE_BDB)
   { "header_cache_pagesize", DT_STR, R_NONE, UL &HeaderCachePageSize, UL "16384" },
   /*
   ** .pp
@@ -1079,7 +1104,7 @@ struct option_t MuttVars[] = {
   ** values can waste space, memory, or CPU time. The default should be more
   ** or less optimal for most use cases.
   */
-#endif /* HAVE_GDBM || HAVE_DB4 */
+#endif /* HAVE_GDBM || HAVE_BDB */
 #endif /* USE_HCACHE */
   { "help",		DT_BOOL, R_BOTH|R_REFLOW, OPTHELP, 1 },
   /*
@@ -1503,7 +1528,10 @@ struct option_t MuttVars[] = {
   ** .dt %u .dd username
   ** .de
   ** .pp
-  ** Example: set inews="/usr/local/bin/inews -hS"
+  ** Example:
+  ** .ts
+  ** set inews="/usr/local/bin/inews -hS"
+  ** .te
   */
 #endif
   { "ispell",		DT_PATH, R_NONE, UL &Ispell, UL ISPELL },
@@ -1616,6 +1644,13 @@ struct option_t MuttVars[] = {
   ** messages to the cur directory.  Note that setting this option may
   ** slow down polling for new messages in large folders, since mutt has
   ** to scan all cur messages.
+  */
+  { "mark_macro_prefix",DT_STR, R_NONE, UL &MarkMacroPrefix, UL "'" },
+  /*
+  ** .pp
+  ** Prefix for macros created using mark-message.  A new macro
+  ** automatically generated with \fI<mark-message>a\fP will be composed
+  ** from this prefix and the letter \fIa\fP.
   */
   { "mark_old",		DT_BOOL, R_BOTH, OPTMARKOLD, 1 },
   /*
@@ -3232,7 +3267,7 @@ struct option_t MuttVars[] = {
   /*
   ** .pp
   ** Lines of quoted text that are displayed before the unquoted text after
-  ** "skip to quoted" command (S)
+  ** ``skip to quoted'' command (S)
   */
   { "sleep_time",	DT_NUM, R_NONE, UL &SleepTime, 1 },
   /*
@@ -3549,6 +3584,10 @@ struct option_t MuttVars[] = {
   ** You may optionally use the ``reverse-'' prefix to specify reverse sorting
   ** order (example: ``\fCset sort=reverse-date-sent\fP'').
   ** .pp
+  ** Example:
+  ** .ts
+  ** set sort=reverse-date-sent
+  ** .te
   ** \fBNote:\fP On Debian systems, this option is set by default to
   ** ``threads'' in /etc/Muttrc.
   */
@@ -4186,6 +4225,11 @@ struct option_t MuttVars[] = {
   ** name of original article author) to article that followuped to newsgroup.
   */
 #endif
+  { "collapse_all",     DT_BOOL, R_NONE, OPTCOLLAPSEALL, 0 },
+  /*
+  ** .pp
+  ** When \fIset\fP, Mutt will collapse all threads when entering a folder.
+  */
   /*--*/
   { NULL, 0, 0, 0, 0 }
 };
@@ -4380,8 +4424,10 @@ const struct command_t Commands[] = {
   { "source",		parse_source,		0 },
   { "spam",		parse_spam_list,	MUTT_SPAM },
   { "nospam",		parse_spam_list,	MUTT_NOSPAM },
+  { "shutdown-hook",	mutt_parse_hook,	MUTT_SHUTDOWNHOOK | MUTT_GLOBALHOOK },
+  { "startup-hook",	mutt_parse_hook,	MUTT_STARTUPHOOK | MUTT_GLOBALHOOK },
   { "subscribe",	parse_subscribe,	0 },
-  { "timeout-hook",	mutt_parse_hook,	MUTT_TIMEOUTHOOK },
+  { "timeout-hook",	mutt_parse_hook,	MUTT_TIMEOUTHOOK | MUTT_GLOBALHOOK },
   { "toggle",		parse_set,		MUTT_SET_INV },
   { "unalias",		parse_unalias,		0 },
   { "unalternative_order",parse_unlist,		UL &AlternativeOrderList },

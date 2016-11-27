@@ -47,7 +47,8 @@ SAMPLE_MUTTRC = muttrc.attach-headers-color muttrc.compress muttrc.cond-date \
 SAMPLE_VIMRC = vimrc.attach-headers-color vimrc.compress vimrc.encrypt-to-self \
 	vimrc.forgotten-attachment vimrc.ifdef vimrc.index-color vimrc.keywords \
 	vimrc.new-mail vimrc.nntp vimrc.notmuch vimrc.progress \
-	vimrc.quasi-delete vimrc.reply-with-xorig vimrc.sidebar vimrc.timeout
+	vimrc.quasi-delete vimrc.reply-with-xorig vimrc.sidebar vimrc.timeout \
+	vimrc.misc
 
 CHUNKED_DOCFILES = index.html intro.html gettingstarted.html \
 	configuration.html mimesupport.html advancedusage.html \
@@ -158,7 +159,9 @@ neomutt-syntax.vim: mutt-1.7.0-syntax.vim $(SAMPLE_VIMRC)
 	( \
 		sed -e '/vim:/d' -e "/This file covers/s/$$/ and NeoMutt $(VERSION)/" $(srcdir)/mutt-1.7.0-syntax.vim; \
 		echo; \
-		cat $?; \
+		for f in $(SAMPLE_VIMRC) ; do \
+			cat $(srcdir)/$$f; \
+		done; \
 		grep "vim:" $(srcdir)/mutt-1.7.0-syntax.vim; \
 	) > $@
 
@@ -178,7 +181,7 @@ sortcheck: manual.xml
 
 clean-local:
 	rm -f *~ *.html *.orig *.rej  stamp-doc-* *.ps mutt.1 smime_keys.1 muttrc.man pgpewrap.1 pgpring.1
-	rm -f *.aux *.log *.tex *.out
+	rm -f *.aux *.log *.tex *.out neomutt-syntax.vim
 
 DISTCLEANFILES=manual.txt manual.html manual.xml manual.pdf html \
 	       instdoc Muttrc

@@ -704,8 +704,11 @@ void maildir_parse_flags (HEADER * h, const char *path)
 	break;
 
       case 'T':		/* trashed */
-	h->trash = 1;
-	h->deleted = 1;
+	if (!h->flagged || !option(OPTFLAGSAFE))
+	{
+	  h->trash = 1;
+	  h->deleted = 1;
+	}
 	break;
       
       default:
@@ -1128,6 +1131,8 @@ static void maildir_delayed_parsing (CONTEXT * ctx, struct maildir **md,
 #if USE_HCACHE
   header_cache_t *hc = NULL;
   void *data;
+  const char *key;
+  size_t keylen;
   struct timeval *when = NULL;
   struct stat lastchanged;
   int ret;
@@ -1183,16 +1188,27 @@ static void maildir_delayed_parsing (CONTEXT * ctx, struct maildir **md,
     }
 
     if (ctx->magic == MUTT_MH)
-      data = mutt_hcache_fetch (hc, p->h->path, strlen);
+    {
+      key = p->h->path;
+      keylen = strlen(key);
+    }
     else
-      data = mutt_hcache_fetch (hc, p->h->path + 3, &maildir_hcache_keylen);
+    {
+      key = p->h->path + 3;
+      keylen = maildir_hcache_keylen(key);
+    }
+    data = mutt_hcache_fetch (hc, key, keylen);
     when = (struct timeval *) data;
 
     if (data != NULL && !ret && lastchanged.st_mtime <= when->tv_sec)
     {
-      p->h = mutt_hcache_restore ((unsigned char *)data, &p->h);
+      HEADER* h = mutt_hcache_restore((unsigned char *)data);
+      h->old = p->h->old;
+      h->path = safe_strdup(p->h->path);
+      mutt_free_header(&p->h);
+      p->h = h;
       if (ctx->magic == MUTT_MAILDIR)
-	maildir_parse_flags (p->h, fn);
+          maildir_parse_flags (p->h, fn);
     }
     else
     {
@@ -1203,15 +1219,22 @@ static void maildir_delayed_parsing (CONTEXT * ctx, struct maildir **md,
       p->header_parsed = 1;
 #if USE_HCACHE
       if (ctx->magic == MUTT_MH)
-	mutt_hcache_store (hc, p->h->path, p->h, 0, strlen, MUTT_GENERATE_UIDVALIDITY);
+      {
+        key = p->h->path;
+        keylen = strlen(key);
+      }
       else
-	mutt_hcache_store (hc, p->h->path + 3, p->h, 0, &maildir_hcache_keylen, MUTT_GENERATE_UIDVALIDITY);
+      {
+        key = p->h->path + 3;
+        keylen = maildir_hcache_keylen(key);
+      }
+      mutt_hcache_store (hc, key, keylen, p->h, 0);
 #endif
     } else
       mutt_free_header (&p->h);
 #if USE_HCACHE
     }
-    FREE (&data);
+    mutt_hcache_free(hc, &data);
 #endif
     last = p;
    }
@@ -1895,6 +1918,10 @@ int mh_sync_mailbox_message (CONTEXT * ctx, int msgno, header_cache_t *hc)
 int mh_sync_mailbox_message (CONTEXT * ctx, int msgno)
 #endif
 {
+#if USE_HCACHE
+    const char *key;
+    size_t keylen;
+#endif
     char path[_POSIX_PATH_MAX], tmp[_POSIX_PATH_MAX];
     HEADER *h = ctx->hdrs[msgno];
 
@@ -1905,12 +1932,20 @@ int mh_sync_mailbox_message (CONTEXT * ctx, int msgno)
 	  || (option (OPTMHPURGE) && ctx->magic == MUTT_MH))
       {
 #if USE_HCACHE
-	if (hc) {
-           if (ctx->magic == MUTT_MAILDIR)
-              mutt_hcache_delete (hc, h->path + 3, &maildir_hcache_keylen);
-	   else if (ctx->magic == MUTT_MH)
-	      mutt_hcache_delete (hc, h->path, strlen);
-	}
+        if (hc)
+        {
+          if (ctx->magic == MUTT_MH)
+          {
+            key = h->path;
+            keylen = strlen(key);
+          }
+          else
+          {
+            key = h->path + 3;
+            keylen = maildir_hcache_keylen(key);
+          }
+          mutt_hcache_delete (hc, key, keylen);
+        }
 #endif /* USE_HCACHE */
 	unlink (path);
       }
@@ -1947,10 +1982,17 @@ int mh_sync_mailbox_message (CONTEXT * ctx, int msgno)
 #if USE_HCACHE
     if (hc && h->changed)
     {
-      if (ctx->magic == MUTT_MAILDIR)
-	mutt_hcache_store (hc, h->path + 3, h, 0, &maildir_hcache_keylen, MUTT_GENERATE_UIDVALIDITY);
-      else if (ctx->magic == MUTT_MH)
-	mutt_hcache_store (hc, h->path, h, 0, strlen, MUTT_GENERATE_UIDVALIDITY);
+      if (ctx->magic == MUTT_MH)
+      {
+        key = h->path;
+        keylen = strlen(key);
+      }
+      else
+      {
+        key = h->path + 3;
+        keylen = maildir_hcache_keylen(key);
+      }
+      mutt_hcache_store (hc, key, keylen, h, 0);
     }
 #endif
 
@@ -2588,6 +2630,7 @@ struct mx_ops mx_maildir_ops = {
   .commit_msg = maildir_commit_message,
   .open_new_msg = maildir_open_new_message,
   .check = maildir_check_mailbox,
+  .sync = mh_sync_mailbox,
 };
 
 struct mx_ops mx_mh_ops = {
@@ -2599,4 +2642,5 @@ struct mx_ops mx_mh_ops = {
   .commit_msg = mh_commit_message,
   .open_new_msg = mh_open_new_message,
   .check = mh_check_mailbox,
+  .sync = mh_sync_mailbox,
 };

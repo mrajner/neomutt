@@ -303,7 +303,7 @@ static int pop_fetch_headers (CONTEXT *ctx)
       if (!ctx->quiet)
 	mutt_progress_update (&progress, i + 1 - old_count, -1);
 #if USE_HCACHE
-      if ((data = mutt_hcache_fetch (hc, ctx->hdrs[i]->data, strlen)))
+      if ((data = mutt_hcache_fetch (hc, ctx->hdrs[i]->data, strlen(ctx->hdrs[i]->data))))
       {
 	char *uidl = safe_strdup (ctx->hdrs[i]->data);
 	int refno = ctx->hdrs[i]->refno;
@@ -317,7 +317,8 @@ static int pop_fetch_headers (CONTEXT *ctx)
 	 *   (the old h->data should point inside a malloc'd block from
 	 *   hcache so there shouldn't be a memleak here)
 	 */
-	HEADER *h = mutt_hcache_restore ((unsigned char *) data, NULL);
+	HEADER *h = mutt_hcache_restore ((unsigned char *) data);
+	mutt_hcache_free (hc, &data);
 	mutt_free_header (&ctx->hdrs[i]);
 	ctx->hdrs[i] = h;
 	ctx->hdrs[i]->refno = refno;
@@ -333,10 +334,9 @@ static int pop_fetch_headers (CONTEXT *ctx)
 #if USE_HCACHE
       else
       {
-	mutt_hcache_store (hc, ctx->hdrs[i]->data, ctx->hdrs[i], 0, strlen, MUTT_GENERATE_UIDVALIDITY);
+	mutt_hcache_store (hc, ctx->hdrs[i]->data, strlen(ctx->hdrs[i]->data), 
+                       ctx->hdrs[i], 0);
       }
-
-      FREE(&data);
 #endif
 
       /*
@@ -664,7 +664,7 @@ static int pop_close_message (CONTEXT *ctx, MESSAGE *msg)
 }
 
 /* update POP mailbox - delete messages from server */
-int pop_sync_mailbox (CONTEXT *ctx, int *index_hint)
+static int pop_sync_mailbox (CONTEXT *ctx, int *index_hint)
 {
   int i, j, ret = 0;
   char buf[LONG_STRING];
@@ -700,7 +700,7 @@ int pop_sync_mailbox (CONTEXT *ctx, int *index_hint)
 	{
 	  mutt_bcache_del (pop_data->bcache, ctx->hdrs[i]->data);
 #if USE_HCACHE
-	  mutt_hcache_delete (hc, ctx->hdrs[i]->data, strlen);
+	  mutt_hcache_delete (hc, ctx->hdrs[i]->data, strlen(ctx->hdrs[i]->data));
 #endif
 	}
       }
@@ -708,7 +708,8 @@ int pop_sync_mailbox (CONTEXT *ctx, int *index_hint)
 #if USE_HCACHE
       if (ctx->hdrs[i]->changed)
       {
-	mutt_hcache_store (hc, ctx->hdrs[i]->data, ctx->hdrs[i], 0, strlen, MUTT_GENERATE_UIDVALIDITY);
+	mutt_hcache_store (hc, ctx->hdrs[i]->data, strlen(ctx->hdrs[i]->data),
+                       ctx->hdrs[i], 0);
       }
 #endif
 
@@ -944,4 +945,5 @@ struct mx_ops mx_pop_ops = {
   .check = pop_check_mailbox,
   .commit_msg = NULL,
   .open_new_msg = NULL,
+  .sync = pop_sync_mailbox,
 };

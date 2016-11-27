@@ -171,6 +171,7 @@ const struct binding_t OpMain[] = { /* map: index */
 #endif
   { "display-message",		OP_DISPLAY_MESSAGE,		"\n" },
   { "display-message",		OP_DISPLAY_MESSAGE,		"\r" },
+  { "mark-message",		OP_MARK_MSG,			"~" },
   { "buffy-list",		OP_BUFFY_LIST,			"." },
   { "sync-mailbox",		OP_MAIN_SYNC_FOLDER,		"$" },
   { "display-address",		OP_DISPLAY_ADDRESS,		"@" },
@@ -417,6 +418,7 @@ const struct binding_t OpCompose[] = { /* map: compose */
 #endif
   { "postpone-message",	OP_COMPOSE_POSTPONE_MESSAGE,	"P" },
   { "edit-reply-to",	OP_COMPOSE_EDIT_REPLY_TO,	"r" },
+  { "rename-attachment",OP_COMPOSE_RENAME_ATTACHMENT,	"\017" },
   { "rename-file",	OP_COMPOSE_RENAME_FILE,		"R" },
   { "edit-subject",	OP_COMPOSE_EDIT_SUBJECT,	"s" },
   { "edit-to",		OP_COMPOSE_EDIT_TO,		"t" },
