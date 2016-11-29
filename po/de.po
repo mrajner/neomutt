@@ -13,8 +13,8 @@ msgid ""
 msgstr ""
 "Project-Id-Version: neomutt-20161104\n"
 "Report-Msgid-Bugs-To: neomutt-devel@neomutt.org\n"
-"POT-Creation-Date: 2016-11-28 16:06+0000\n"
-"PO-Revision-Date: 2016-11-26 23:02+0100\n"
+"POT-Creation-Date: 2016-11-29 00:30+0000\n"
+"PO-Revision-Date: 2016-11-28 18:47+0100\n"
 "Last-Translator: André Berger <andre.berger@web.de>\n"
 "Language-Team: none\n"
 "Language: de\n"
@@ -3489,7 +3489,7 @@ msgstr "Alle verfügbaren TLS/SSL Protokolle sind deaktiviert"
 
 #: mutt_ssl_gnutls.c:359
 msgid "Explicit ciphersuite selection via $ssl_ciphers not supported"
-msgstr ""
+msgstr "Keine direkte Auswahl der Verschlüsselungsgruppe durch $ssl_ciphers möglich"
 
 #: mutt_ssl_gnutls.c:467
 #, c-format
@@ -3953,7 +3953,7 @@ msgstr "(i)nline"
 #: pgp.c:1744
 #, c-format
 msgid "PGP (s)ign, sign (a)s, %s format, (c)lear, or (o)ppenc mode off? "
-msgstr "PGP (s)ign., sign. (a)ls, %s Format, (u)nverschl., oder (w)ie-mögl.-Modus? "
+msgstr "PGP (s)ign., sign. (a)ls, %s Format, (u)nverschl., oder (w)ie-mögl.-Modus aus? "
 
 #. L10N: PGP options (inline) (opportunistic encryption is on)
 #. The 'i' is from the "PGP/M(i)ME" or "(i)nline", above.
