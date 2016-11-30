@@ -13,8 +13,8 @@ msgid ""
 msgstr ""
 "Project-Id-Version: neomutt-20161104\n"
 "Report-Msgid-Bugs-To: neomutt-devel@neomutt.org\n"
-"POT-Creation-Date: 2016-11-29 00:30+0000\n"
-"PO-Revision-Date: 2016-11-28 18:47+0100\n"
+"POT-Creation-Date: 2016-11-30 09:47+0000\n"
+"PO-Revision-Date: 2016-11-30 06:38+0100\n"
 "Last-Translator: André Berger <andre.berger@web.de>\n"
 "Language-Team: none\n"
 "Language: de\n"
@@ -1457,7 +1457,7 @@ msgstr "GPGME: CMS Protokoll nicht verfügbar"
 #. L10N: S/MIME options (opportunistic encryption is on)
 #: crypt-gpgme.c:4722
 msgid "S/MIME (s)ign, sign (a)s, (p)gp, (c)lear, or (o)ppenc mode off? "
-msgstr "S/MIME (s)ign., sign. (a)ls, (p)gp, (u)nverschl., oder (w)ie-mögl.-Modus aus? "
+msgstr "S/MIME (s)ign., sign. (a)ls, (p)gp, (u)nverschl., oder kein (w)ie-mögl.-Modus? "
 
 #. L10N: S/MIME options (opportunistic encryption is on)
 #. The 'f' is undocumented. Please DO NOT translate it.
@@ -1468,7 +1468,7 @@ msgstr "sapuuw"
 #. L10N: PGP options (opportunistic encryption is on)
 #: crypt-gpgme.c:4731
 msgid "PGP (s)ign, sign (a)s, s/(m)ime, (c)lear, or (o)ppenc mode off? "
-msgstr "PGP (s)ign., sign. (a)ls, s/(m)ime, (u)nverschl., oder (w)ie-mögl.-Modus aus? "
+msgstr "PGP (s)ign., sign. (a)ls, s/(m)ime, (u)nverschl., oder kein (w)ie-mögl.-Modus? "
 
 #. L10N: PGP options (opportunistic encryption is on)
 #. The 'f' is undocumented. Please DO NOT translate it.
@@ -3953,7 +3953,7 @@ msgstr "(i)nline"
 #: pgp.c:1744
 #, c-format
 msgid "PGP (s)ign, sign (a)s, %s format, (c)lear, or (o)ppenc mode off? "
-msgstr "PGP (s)ign., sign. (a)ls, %s Format, (u)nverschl., oder (w)ie-mögl.-Modus aus? "
+msgstr "PGP (s)ign., sign. (a)ls, %s Format, (u)nverschl., oder kein (w)ie-mögl.-Modus? "
 
 #. L10N: PGP options (inline) (opportunistic encryption is on)
 #. The 'i' is from the "PGP/M(i)ME" or "(i)nline", above.
@@ -3965,7 +3965,7 @@ msgstr "sauuwi"
 #. L10N: PGP options (opportunistic encryption is on)
 #: pgp.c:1755
 msgid "PGP (s)ign, sign (a)s, (c)lear, or (o)ppenc mode off? "
-msgstr "PGP (s)ign., sign. (a)ls, (u)nverschl., oder (w)ie-mögl.-Modus aus? "
+msgstr "PGP (s)ign., sign. (a)ls, (u)nverschl., oder kein (w)ie-mögl.-Modus? "
 
 #. L10N: PGP options (opportunistic encryption is on)
 #. The 'f' is undocumented. Please DO NOT translate it.
@@ -4718,7 +4718,7 @@ msgstr ""
 #. L10N: S/MIME options (opportunistic encryption is on)
 #: smime.c:2111
 msgid "S/MIME (s)ign, encrypt (w)ith, sign (a)s, (c)lear, or (o)ppenc mode off? "
-msgstr "S/MIME (s)ign., verschl. (m)it, sign. (a)ls, (u)nverschl., oder (w)ie-mögl.-Modus aus?"
+msgstr "S/MIME (s)ign., verschl. (m)it, sign. (a)ls, (u)nverschl., oder kein (w)ie-mögl.-Modus?"
 
 #. L10N: S/MIME options (opportunistic encryption is on)
 #. The 'f' is undocumented. Please DO NOT translate it.
