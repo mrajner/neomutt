@@ -3530,11 +3530,11 @@ struct option_t MuttVars[] = {
   ** .pp
   ** This is a colon-delimited list of authentication methods mutt may
   ** attempt to use to log in to an SMTP server, in the order mutt should
-  ** try them.  Authentication methods are any SASL mechanism, e.g. ``plain``,
+  ** try them.  Authentication methods are any SASL mechanism, e.g. ``plain'',
   ** ``digest-md5'', ``gssapi'' or ``cram-md5''.
   ** This option is case-insensitive. If it is ``unset''
   ** (the default) mutt will try all available methods, in order from
-  ** most-secure to least-secure. Support for the ``plain`` mechanism is
+  ** most-secure to least-secure. Support for the ``plain'' mechanism is
   ** bundled; other mechanisms are provided by an external SASL library (look
   ** for +USE_SASL in the output of mutt -v).
   ** .pp
