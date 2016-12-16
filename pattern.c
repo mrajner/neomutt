@@ -36,6 +36,7 @@
 #include "mutt_crypt.h"
 #include "mutt_curses.h"
 #include "group.h"
+#include "mutt_menu.h"
 
 #ifdef USE_IMAP
 #include "mx.h"
@@ -358,21 +359,174 @@ static int eat_regexp (pattern_t *pat, BUFFER *s, BUFFER *err)
   return 0;
 }
 
-int eat_range (pattern_t *pat, BUFFER *s, BUFFER *err)
+#define RANGE_REL_SLOT_REGEXP \
+    "[[:blank:]]*([.^$]|-?([[:digit:]]+|0x[[:xdigit:]]+)[MmKk]?)?[[:blank:]]*"
+
+#define RANGE_REL_REGEXP ("^" RANGE_REL_SLOT_REGEXP "," RANGE_REL_SLOT_REGEXP)
+#define RANGE_REL_REGEXP_NGROUPS 5
+
+#define CTX_HUMAN_MSGNO(c) (((c)->hdrs[(c)->v2r[(c)->menu->current]]->msgno)+1)
+
+#define RANGE_EMPTY ' '
+#define RANGE_DOT '.'
+#define RANGE_CIRCUM '^'
+#define RANGE_DOLLAR '$'
+#define RANGE_NEG '-'
+#define RANGE_POS '+'
+#define KILO 1024
+#define MEGA 1048576
+
+struct range_slot {
+  int kind;                     /* RANGE_EMPTY etc. */
+  int num;                      /* scanned integer */
+};
+
+static int
+scan_range_rel_num (BUFFER *s, regmatch_t pmatch[], int group)
+{
+  int num;
+  unsigned char c;
+
+  /* this cast looks dangerous, but is already all over this code
+   * (explicit or not) */
+  num = (int)strtol(&s->dptr[pmatch[group].rm_so], NULL, 0);
+  c = (unsigned char)(s->dptr[pmatch[group].rm_eo - 1]);
+  if (toupper(c) == 'K')
+    num *= KILO;
+  else if (toupper(c) == 'M')
+    num *= MEGA;
+  return num;
+}
+
+static void
+scan_range_rel_slot (BUFFER *s, regmatch_t pmatch[], int group,
+                     struct range_slot* rs)
+{
+  unsigned char c;
+  
+  /* This means the left or right subpattern was empty, e.g. ",." */
+  if (pmatch[group].rm_so == -1) {
+    rs->kind = RANGE_EMPTY;
+    return;
+  }
+
+  /* We have something, so determine what */
+  c = (unsigned char)(s->dptr[pmatch[group].rm_so]);
+  if (c == RANGE_DOT || c == RANGE_CIRCUM || c == RANGE_DOLLAR) {
+    rs->kind = c;
+    return;
+  }
+
+  /* Only other possibility: a number */
+  rs->num = scan_range_rel_num(s, pmatch, group);
+  rs->kind = (rs->num < 0 ? RANGE_NEG : RANGE_POS);
+  return;
+}
+
+static void
+swap_pattern (pattern_t *pat)
+{
+  int num;
+
+  num = pat->min; pat->min = pat->max; pat->max = num;
+}
+
+static regex_t range_rel_regexp;
+static int range_rel_regexp_compiled = 0;
+
+static char*
+eat_range_relative (pattern_t *pat, BUFFER *s, BUFFER *err)
+{
+  struct range_slot lslot, rslot;  
+  int regerr;
+  regmatch_t pmatch[RANGE_REL_REGEXP_NGROUPS];
+  
+  /* Do we actually have a current message? */
+  if (!Context || !Context->menu)
+  {
+    strfcpy(err->data, _("No current message"), err->dsize);
+    return NULL;
+  }
+
+  /* First time through, compile the big regexp */
+  if (!range_rel_regexp_compiled) {
+    regerr = regcomp(&range_rel_regexp, RANGE_REL_REGEXP, REG_EXTENDED);
+    if (regerr) {
+      (void) regerror(regerr, &range_rel_regexp, err->data, err->dsize);
+      return NULL;
+    }
+    range_rel_regexp_compiled = 1;
+  }
+
+  /* Match the pattern buffer against the compiled regexp.
+   * No match means syntax error. */
+  regerr = regexec(&range_rel_regexp, s->dptr,
+                   RANGE_REL_REGEXP_NGROUPS, pmatch, 0);
+  if (regerr) {
+    (void) regerror(regerr, &range_rel_regexp, err->data, err->dsize);
+    return NULL;
+  }
+
+  /* Snarf the contents of the two sides of the range. */
+  scan_range_rel_slot(s, pmatch, 1, &lslot);
+  scan_range_rel_slot(s, pmatch, 3, &rslot);
+
+  /* Translate into mutt range pattern bounds. */
+  switch (lslot.kind) {
+  case RANGE_EMPTY:
+  case RANGE_CIRCUM:
+    pat->min = 1;
+    break;
+  case RANGE_DOLLAR:
+    pat->min = MUTT_MAXRANGE;
+    break;
+  case RANGE_DOT:
+    pat->min = CTX_HUMAN_MSGNO(Context);
+    break;
+  case RANGE_POS:
+    pat->min = CTX_HUMAN_MSGNO(Context) + lslot.num - 1;
+    break;
+  case RANGE_NEG:
+    pat->min = CTX_HUMAN_MSGNO(Context) + lslot.num + 1;
+    break;
+  }
+
+  switch (rslot.kind) {
+  case RANGE_CIRCUM:
+    pat->max = 1;
+    break;
+  case RANGE_EMPTY:
+  case RANGE_DOLLAR:
+    pat->max = MUTT_MAXRANGE;
+    break;
+  case RANGE_DOT:
+    pat->max = CTX_HUMAN_MSGNO(Context);
+    break;
+  case RANGE_POS:
+    pat->max = CTX_HUMAN_MSGNO(Context) + rslot.num - 1;
+    break;
+  case RANGE_NEG:
+    pat->max = CTX_HUMAN_MSGNO(Context) + rslot.num + 1;
+    break;
+  }
+  dprint(1, (debugfile, "pat->min=%d pat->max=%d\n", pat->min, pat->max));
+             
+
+  /* Since we don't enforce order, we must swap bounds if they're backward */
+  if (pat->min == MUTT_MAXRANGE)
+    swap_pattern(pat);
+  else if (pat->max != MUTT_MAXRANGE && pat->min > pat->max)
+    swap_pattern(pat);
+
+  /* Return pointer past the entire match. */
+  return &s->dptr[pmatch[0].rm_eo];
+}
+
+static char * eat_range_fixed (pattern_t *pat, BUFFER *s)
 {
   char *tmp;
   int do_exclusive = 0;
-  int skip_quote = 0;
-  
-  /*
-   * If simple_search is set to "~m %s", the range will have double quotes 
-   * around it...
-   */
-  if (*s->dptr == '"')
-  {
-    s->dptr++;
-    skip_quote = 1;
-  }
+
   if (*s->dptr == '<')
     do_exclusive = 1;
   if ((*s->dptr != '-') && (*s->dptr != '<'))
@@ -398,14 +552,14 @@ int eat_range (pattern_t *pat, BUFFER *s, BUFFER *err)
     if (*s->dptr == '>')
     {
       s->dptr = tmp;
-      return 0;
+      return tmp;
     }
     if (*tmp != '-')
     {
       /* exact value */
       pat->max = pat->min;
       s->dptr = tmp;
-      return 0;
+      return tmp;
     }
     tmp++;
   }
@@ -435,7 +589,35 @@ int eat_range (pattern_t *pat, BUFFER *s, BUFFER *err)
   else
     pat->max = MUTT_MAXRANGE;
 
-  if (skip_quote && *tmp == '"')
+  return tmp;
+}
+
+int eat_range (pattern_t *pat, BUFFER *s, BUFFER *err)
+{
+  char *tmp = NULL;
+  int skip_quote = 0;
+  
+  /*
+   * If simple_search is set to "~m %s", the range will have double quotes 
+   * around it...
+   */
+  if (*s->dptr == '"')
+  {
+    s->dptr++;
+    skip_quote = 1;
+  }
+
+  /* We're looking at a new-style (relative) pattern iff a comma occurs in it */
+  if (strchr(s->dptr, ',') == NULL)
+    tmp = eat_range_fixed(pat, s);
+  else
+  {
+    tmp = eat_range_relative(pat, s, err);
+    if (!tmp)
+      return -1;
+  }
+  
+  if (skip_quote && (*tmp == '"'))
     tmp++;
 
   SKIPWS (tmp);
