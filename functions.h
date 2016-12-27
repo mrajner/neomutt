@@ -568,3 +568,11 @@ const struct binding_t OpMix[] = { /* map: mixmaster */
   { NULL, 		0, 		NULL }
 };
 #endif /* MIXMASTER */
+
+const struct binding_t OpSummary[] =
+{
+  { "quit", OP_QUIT, "q"  },
+  { "help", OP_HELP, "?"  },
+  { NULL,   0,       NULL }
+};
+

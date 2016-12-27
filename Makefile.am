@@ -48,7 +48,7 @@ mutt_SOURCES = \
 	status.c system.c thread.c charset.c history.c lib.c \
 	muttlib.c editmsg.c mbyte.c \
 	url.c ascii.c crypt-mod.c crypt-mod.h safe_asprintf.c version.c \
-	icommands.c
+	icommands.c summary.c
 
 nodist_mutt_SOURCES = $(BUILT_SOURCES)
 
@@ -82,7 +82,7 @@ EXTRA_DIST = COPYRIGHT LICENSE.md OPS OPS.PGP OPS.CRYPT OPS.SMIME TODO UPDATING 
 	mutt_regex.h mutt_sasl.h mutt_socket.h mutt_ssl.h mutt_tunnel.h \
 	mx.h pager.h pgp.h pop.h protos.h rfc1524.h rfc2047.h \
 	rfc2231.h rfc822.h rfc3676.h sha1.h sort.h mime.types \
-	nntp.h ChangeLog.nntp icommands.h \
+	nntp.h ChangeLog.nntp icommands.h summary.h \
 	_regex.h OPS.MIX README.SECURITY remailer.c remailer.h browser.h \
 	mbyte.h lib.h extlib.c pgpewrap.c smime_keys.pl pgplib.h \
 	README.SSL README.md README.neomutt README.notmuch smime.h group.h \

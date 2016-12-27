@@ -21,6 +21,7 @@
 #endif
 
 #include "icommands.h"
+#include "summary.h"
 
 /* prototypes for interactive commands */
 static int icmd_test     (BUFFER *, BUFFER *, unsigned long, BUFFER *);
@@ -131,9 +132,8 @@ static int icmd_help (BUFFER *buf, BUFFER *s, unsigned long data, BUFFER *err)
 
 static int icmd_test (BUFFER *buf, BUFFER *s, unsigned long data, BUFFER *err)
 {
-  /* TODO: implement ':test' command as suggested by flatcap in #162 */
-  snprintf (err->data, err->dsize, _("Not implemented yet."));
-  return 1;
+  mutt_summary();
+  return 0;
 }
 
 static int icmd_bind (BUFFER *buf, BUFFER *s, unsigned long data, BUFFER *err)
