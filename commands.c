@@ -653,7 +653,7 @@ void mutt_enter_command (void)
 
   /* check if buffer is a valid icommand, else fall back quietly to parse_rc_lines */
   ir = neomutt_parse_icommand(buffer, &ierr);
-  if(!mutt_strcmp(ierr.data, ICOMMAND_NOT_FOUND))
+  if (!mutt_strcmp(ierr.data, ICOMMAND_NOT_FOUND))
   {
      /* if ICommand was not found, try conventional parse_rc_line */
      r = mutt_parse_rc_line (buffer, &token, &err);
@@ -669,9 +669,9 @@ void mutt_enter_command (void)
             mutt_error ("%s", err.data);
      }
   }
-  else if(ierr.data[0])
+  else if (ierr.data[0])
   {
-     if(ir != 0) /* command succeeded with message */
+     if (ir != 0) /* command succeeded with message */
         mutt_message ("%s", ierr.data);
      else        /* error executing command */
         mutt_error ("%s", ierr.data);
