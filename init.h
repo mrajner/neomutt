@@ -38,6 +38,7 @@
 #define DT_MAGIC	8 /* mailbox type */
 #define DT_SYN		9 /* synonym for another variable */
 #define DT_ADDR	       10 /* e-mail address */
+#define DT_MBCHARTBL   11 /* multibyte char table */
 
 #define DTYPE(x) ((x) & DT_MASK)
 
@@ -3385,7 +3386,7 @@ struct option_t MuttVars[] = {
   ** required.)
   */
 #endif /* defined(USE_SSL) */
-  { "status_chars",	DT_STR,	 R_BOTH, UL &StChars, UL "-*%A" },
+  { "status_chars",	DT_MBCHARTBL, R_BOTH, UL &StChars, UL "-*%A" },
   /*
   ** .pp
   ** Controls the characters used by the ``%r'' indicator in
@@ -3569,7 +3570,7 @@ struct option_t MuttVars[] = {
   ** this variable is not set, the environment variable \fC$$$TMPDIR\fP is
   ** used.  If \fC$$$TMPDIR\fP is not set then ``\fC/tmp\fP'' is used.
   */
-  { "to_chars",		DT_STR,	 R_BOTH, UL &Tochars, UL " +TCFL" },
+  { "to_chars",		DT_MBCHARTBL, R_BOTH, UL &Tochars, UL " +TCFL" },
   /*
   ** .pp
   ** Controls the character used to indicate mail addressed to you.  The
