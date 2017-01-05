@@ -452,7 +452,7 @@ eat_range_relative (pattern_t *pat, BUFFER *s, BUFFER *err)
   if (!range_rel_regexp_compiled) {
     regerr = regcomp(&range_rel_regexp, RANGE_REL_REGEXP, REG_EXTENDED);
     if (regerr) {
-      (void) regerror(regerr, &range_rel_regexp, err->data, err->dsize);
+      regerror(regerr, &range_rel_regexp, err->data, err->dsize);
       return NULL;
     }
     range_rel_regexp_compiled = 1;
@@ -463,7 +463,7 @@ eat_range_relative (pattern_t *pat, BUFFER *s, BUFFER *err)
   regerr = regexec(&range_rel_regexp, s->dptr,
                    RANGE_REL_REGEXP_NGROUPS, pmatch, 0);
   if (regerr) {
-    (void) regerror(regerr, &range_rel_regexp, err->data, err->dsize);
+    regerror(regerr, &range_rel_regexp, err->data, err->dsize);
     return NULL;
   }
 
