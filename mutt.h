@@ -1029,8 +1029,8 @@ typedef struct _context
   int flagged;			/* how many flagged messages */
   int msgnotreadyet;		/* which msg "new" in pager, -1 if none */
 
-  MUTTMENU* menu;     /* needed for pattern compilation */
-    
+  MUTTMENU *menu;               /* needed for pattern compilation */
+
   short magic;			/* mailbox type */
 
   unsigned char rights[(RIGHTSMAX + 7)/8];	/* ACL bits */

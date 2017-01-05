@@ -153,7 +153,7 @@ typedef struct color_line
   int match; /* which substringmap 0 for old behaviour */
   char *pattern;
   struct pattern_t *color_pattern; /* compiled pattern to speed up index color
-                               calculation */
+                                      calculation */
   short fg;
   short bg;
   int pair;

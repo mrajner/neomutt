@@ -403,7 +403,7 @@ scan_range_rel_slot (BUFFER *s, regmatch_t pmatch[], int group,
                      struct range_slot* rs)
 {
   unsigned char c;
-  
+
   /* This means the left or right subpattern was empty, e.g. ",." */
   if (pmatch[group].rm_so == -1) {
     rs->kind = RANGE_EMPTY;
@@ -437,10 +437,10 @@ static int range_rel_regexp_compiled = 0;
 static char*
 eat_range_relative (pattern_t *pat, BUFFER *s, BUFFER *err)
 {
-  struct range_slot lslot, rslot;  
+  struct range_slot lslot, rslot;
   int regerr;
   regmatch_t pmatch[RANGE_REL_REGEXP_NGROUPS];
-  
+
   /* Do we actually have a current message? */
   if (!Context || !Context->menu)
   {
@@ -510,7 +510,6 @@ eat_range_relative (pattern_t *pat, BUFFER *s, BUFFER *err)
     break;
   }
   dprint(1, (debugfile, "pat->min=%d pat->max=%d\n", pat->min, pat->max));
-             
 
   /* Since we don't enforce order, we must swap bounds if they're backward */
   if (pat->min == MUTT_MAXRANGE)
@@ -596,9 +595,9 @@ int eat_range (pattern_t *pat, BUFFER *s, BUFFER *err)
 {
   char *tmp = NULL;
   int skip_quote = 0;
-  
+
   /*
-   * If simple_search is set to "~m %s", the range will have double quotes 
+   * If simple_search is set to "~m %s", the range will have double quotes
    * around it...
    */
   if (*s->dptr == '"')
@@ -616,7 +615,7 @@ int eat_range (pattern_t *pat, BUFFER *s, BUFFER *err)
     if (!tmp)
       return -1;
   }
-  
+
   if (skip_quote && (*tmp == '"'))
     tmp++;
 
