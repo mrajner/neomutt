@@ -376,7 +376,8 @@ static int eat_regexp (pattern_t *pat, BUFFER *s, BUFFER *err)
 #define KILO 1024
 #define MEGA 1048576
 
-struct range_slot {
+struct range_slot
+{
   int kind;                     /* RANGE_EMPTY etc. */
   int num;                      /* scanned integer */
 };
@@ -405,14 +406,16 @@ scan_range_rel_slot (BUFFER *s, regmatch_t pmatch[], int group,
   unsigned char c;
 
   /* This means the left or right subpattern was empty, e.g. ",." */
-  if (pmatch[group].rm_so == -1) {
+  if (pmatch[group].rm_so == -1)
+  {
     rs->kind = RANGE_EMPTY;
     return;
   }
 
   /* We have something, so determine what */
   c = (unsigned char)(s->dptr[pmatch[group].rm_so]);
-  if (c == RANGE_DOT || c == RANGE_CIRCUM || c == RANGE_DOLLAR) {
+  if (c == RANGE_DOT || c == RANGE_CIRCUM || c == RANGE_DOLLAR)
+  {
     rs->kind = c;
     return;
   }
@@ -449,9 +452,11 @@ eat_range_relative (pattern_t *pat, BUFFER *s, BUFFER *err)
   }
 
   /* First time through, compile the big regexp */
-  if (!range_rel_regexp_compiled) {
+  if (!range_rel_regexp_compiled)
+  {
     regerr = regcomp(&range_rel_regexp, RANGE_REL_REGEXP, REG_EXTENDED);
-    if (regerr) {
+    if (regerr)
+    {
       regerror(regerr, &range_rel_regexp, err->data, err->dsize);
       return NULL;
     }
@@ -462,7 +467,8 @@ eat_range_relative (pattern_t *pat, BUFFER *s, BUFFER *err)
    * No match means syntax error. */
   regerr = regexec(&range_rel_regexp, s->dptr,
                    RANGE_REL_REGEXP_NGROUPS, pmatch, 0);
-  if (regerr) {
+  if (regerr)
+  {
     regerror(regerr, &range_rel_regexp, err->data, err->dsize);
     return NULL;
   }
@@ -472,42 +478,44 @@ eat_range_relative (pattern_t *pat, BUFFER *s, BUFFER *err)
   scan_range_rel_slot(s, pmatch, 3, &rslot);
 
   /* Translate into mutt range pattern bounds. */
-  switch (lslot.kind) {
-  case RANGE_EMPTY:
-  case RANGE_CIRCUM:
-    pat->min = 1;
-    break;
-  case RANGE_DOLLAR:
-    pat->min = MUTT_MAXRANGE;
-    break;
-  case RANGE_DOT:
-    pat->min = CTX_HUMAN_MSGNO(Context);
-    break;
-  case RANGE_POS:
-    pat->min = CTX_HUMAN_MSGNO(Context) + lslot.num - 1;
-    break;
-  case RANGE_NEG:
-    pat->min = CTX_HUMAN_MSGNO(Context) + lslot.num + 1;
-    break;
+  switch (lslot.kind)
+  {
+    case RANGE_EMPTY:
+    case RANGE_CIRCUM:
+      pat->min = 1;
+      break;
+    case RANGE_DOLLAR:
+      pat->min = MUTT_MAXRANGE;
+      break;
+    case RANGE_DOT:
+      pat->min = CTX_HUMAN_MSGNO(Context);
+      break;
+    case RANGE_POS:
+      pat->min = CTX_HUMAN_MSGNO(Context) + lslot.num - 1;
+      break;
+    case RANGE_NEG:
+      pat->min = CTX_HUMAN_MSGNO(Context) + lslot.num + 1;
+      break;
   }
 
-  switch (rslot.kind) {
-  case RANGE_CIRCUM:
-    pat->max = 1;
-    break;
-  case RANGE_EMPTY:
-  case RANGE_DOLLAR:
-    pat->max = MUTT_MAXRANGE;
-    break;
-  case RANGE_DOT:
-    pat->max = CTX_HUMAN_MSGNO(Context);
-    break;
-  case RANGE_POS:
-    pat->max = CTX_HUMAN_MSGNO(Context) + rslot.num - 1;
-    break;
-  case RANGE_NEG:
-    pat->max = CTX_HUMAN_MSGNO(Context) + rslot.num + 1;
-    break;
+  switch (rslot.kind)
+  {
+    case RANGE_CIRCUM:
+      pat->max = 1;
+      break;
+    case RANGE_EMPTY:
+    case RANGE_DOLLAR:
+      pat->max = MUTT_MAXRANGE;
+      break;
+    case RANGE_DOT:
+      pat->max = CTX_HUMAN_MSGNO(Context);
+      break;
+    case RANGE_POS:
+      pat->max = CTX_HUMAN_MSGNO(Context) + rslot.num - 1;
+      break;
+    case RANGE_NEG:
+      pat->max = CTX_HUMAN_MSGNO(Context) + rslot.num + 1;
+      break;
   }
   dprint(1, (debugfile, "pat->min=%d pat->max=%d\n", pat->min, pat->max));
 
