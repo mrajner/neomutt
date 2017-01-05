@@ -91,7 +91,6 @@
 #define WHERE_DEFINED 1
 
 #include "mutt_regex.h"
-#include "mutt_menu.h"
 
 /* flags for mutt_enter_string() */
 #define  MUTT_ALIAS   1      /* do alias "completion" by calling up the alias-menu */
@@ -999,6 +998,8 @@ struct mx_ops
   int (*commit_msg) (struct _context *, struct _message *);
   int (*open_new_msg) (struct _message *, struct _context *, HEADER *);
 };
+
+#include "mutt_menu.h"
 
 typedef struct _context
 {
