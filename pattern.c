@@ -491,10 +491,10 @@ eat_range_relative (pattern_t *pat, BUFFER *s, BUFFER *err)
       pat->min = CTX_HUMAN_MSGNO(Context);
       break;
     case RANGE_POS:
-      pat->min = CTX_HUMAN_MSGNO(Context) + lslot.num - 1;
+      pat->min = CTX_HUMAN_MSGNO(Context) + lslot.num;
       break;
     case RANGE_NEG:
-      pat->min = CTX_HUMAN_MSGNO(Context) + lslot.num + 1;
+      pat->min = CTX_HUMAN_MSGNO(Context) + lslot.num;
       break;
   }
 
@@ -511,10 +511,10 @@ eat_range_relative (pattern_t *pat, BUFFER *s, BUFFER *err)
       pat->max = CTX_HUMAN_MSGNO(Context);
       break;
     case RANGE_POS:
-      pat->max = CTX_HUMAN_MSGNO(Context) + rslot.num - 1;
+      pat->max = CTX_HUMAN_MSGNO(Context) + rslot.num;
       break;
     case RANGE_NEG:
-      pat->max = CTX_HUMAN_MSGNO(Context) + rslot.num + 1;
+      pat->max = CTX_HUMAN_MSGNO(Context) + rslot.num;
       break;
   }
   dprint(1, (debugfile, "pat->min=%d pat->max=%d\n", pat->min, pat->max));
