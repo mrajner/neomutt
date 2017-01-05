@@ -414,7 +414,7 @@ scan_range_rel_slot (BUFFER *s, regmatch_t pmatch[], int group,
 
   /* We have something, so determine what */
   c = (unsigned char)(s->dptr[pmatch[group].rm_so]);
-  if (c == RANGE_DOT || c == RANGE_CIRCUM || c == RANGE_DOLLAR)
+  if ((c == RANGE_DOT) || (c == RANGE_CIRCUM) || (c == RANGE_DOLLAR))
   {
     rs->kind = c;
     return;
@@ -422,7 +422,7 @@ scan_range_rel_slot (BUFFER *s, regmatch_t pmatch[], int group,
 
   /* Only other possibility: a number */
   rs->num = scan_range_rel_num(s, pmatch, group);
-  rs->kind = (rs->num < 0 ? RANGE_NEG : RANGE_POS);
+  rs->kind = ((rs->num < 0) ? RANGE_NEG : RANGE_POS);
   return;
 }
 
@@ -522,7 +522,7 @@ eat_range_relative (pattern_t *pat, BUFFER *s, BUFFER *err)
   /* Since we don't enforce order, we must swap bounds if they're backward */
   if (pat->min == MUTT_MAXRANGE)
     swap_pattern(pat);
-  else if (pat->max != MUTT_MAXRANGE && pat->min > pat->max)
+  else if ((pat->max != MUTT_MAXRANGE) && (pat->min > pat->max))
     swap_pattern(pat);
 
   /* Return pointer past the entire match. */
