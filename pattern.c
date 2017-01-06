@@ -473,7 +473,10 @@ eat_range_relative (pattern_t *pat, BUFFER *s, BUFFER *err)
                    RANGE_REL_REGEXP_NGROUPS, pmatch, 0);
   if (regerr)
   {
-    regerror(regerr, &range_rel_regexp, err->data, ds);
+    if (regerror(regerr, &range_rel_regexp, err->data, ds) > ds)
+    {
+      dprint(2, (debugfile, "warning: buffer too small for regerror\n"));
+    }
     return NULL;
   }
 
