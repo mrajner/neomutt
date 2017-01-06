@@ -443,11 +443,12 @@ eat_range_relative (pattern_t *pat, BUFFER *s, BUFFER *err)
   struct range_slot lslot, rslot;
   int regerr;
   regmatch_t pmatch[RANGE_REL_REGEXP_NGROUPS];
+  size_t ds = err->dsize;
 
   /* Do we actually have a current message? */
   if (!Context || !Context->menu)
   {
-    strfcpy(err->data, _("No current message"), err->dsize);
+    strfcpy(err->data, _("No current message"), ds);
     return NULL;
   }
 
@@ -457,7 +458,10 @@ eat_range_relative (pattern_t *pat, BUFFER *s, BUFFER *err)
     regerr = regcomp(&range_rel_regexp, RANGE_REL_REGEXP, REG_EXTENDED);
     if (regerr)
     {
-      regerror(regerr, &range_rel_regexp, err->data, err->dsize);
+      if (regerror(regerr, &range_rel_regexp, err->data, ds) > ds)
+      {
+        dprint(2, (debugfile, "warning: buffer too small for regerror\n"));
+      }
       return NULL;
     }
     range_rel_regexp_compiled = 1;
@@ -469,7 +473,7 @@ eat_range_relative (pattern_t *pat, BUFFER *s, BUFFER *err)
                    RANGE_REL_REGEXP_NGROUPS, pmatch, 0);
   if (regerr)
   {
-    regerror(regerr, &range_rel_regexp, err->data, err->dsize);
+    regerror(regerr, &range_rel_regexp, err->data, ds);
     return NULL;
   }
 
