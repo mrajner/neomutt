@@ -420,11 +420,17 @@ scan_range_rel_slot (BUFFER *s, regmatch_t pmatch[], int group,
 }
 
 static void
-swap_pattern (pattern_t *pat)
+order_range (pattern_t *pat)
 {
   int num;
 
-  num = pat->min; pat->min = pat->max; pat->max = num;
+  if (pat->min != MUTT_MAXRANGE)
+    return;
+  else if ((pat->max == MUTT_MAXRANGE) && (pat->min <= pat->max))
+    return;
+  num = pat->min;
+  pat->min = pat->max;
+  pat->max = num;
 }
 
 static int
@@ -538,10 +544,7 @@ eat_range_relative (pattern_t *pat, BUFFER *s, BUFFER *err)
   dprint(1, (debugfile, "pat->min=%d pat->max=%d\n", pat->min, pat->max));
 
   /* Since we don't enforce order, we must swap bounds if they're backward */
-  if (pat->min == MUTT_MAXRANGE)
-    swap_pattern(pat);
-  else if ((pat->max != MUTT_MAXRANGE) && (pat->min > pat->max))
-    swap_pattern(pat);
+  order_range(pat);
 
   /* Return pointer past the entire match. */
   return &s->dptr[pmatch[0].rm_eo];
