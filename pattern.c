@@ -386,8 +386,6 @@ scan_range_num (BUFFER *s, regmatch_t pmatch[], int group, int relative)
 #define RANGE_DOT '.'
 #define RANGE_CIRCUM '^'
 #define RANGE_DOLLAR '$'
-#define RANGE_NEG '-'
-#define RANGE_POS '+'
 
 /* *right* and *relative* are boolean args
  * right == 0 means we're processing the left part of the range */
