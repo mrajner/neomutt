@@ -359,39 +359,8 @@ static int eat_regexp (pattern_t *pat, BUFFER *s, BUFFER *err)
   return 0;
 }
 
-#define RANGE_REL_SLOT_REGEXP \
-    "[[:blank:]]*([.^$]|-?([[:digit:]]+|0x[[:xdigit:]]+)[MmKk]?)?[[:blank:]]*"
-
-#define RANGE_REL_REGEXP ("^" RANGE_REL_SLOT_REGEXP "," RANGE_REL_SLOT_REGEXP)
-#define RANGE_REL_REGEXP_NGROUPS 5
-
-#define RANGE_EMPTY ' '
-#define RANGE_DOT '.'
-#define RANGE_CIRCUM '^'
-#define RANGE_DOLLAR '$'
-#define RANGE_NEG '-'
-#define RANGE_POS '+'
 #define KILO 1024
 #define MEGA 1048576
-
-struct range_slot
-{
-  int kind;                     /* RANGE_EMPTY etc. */
-  int num;                      /* scanned integer */
-};
-
-static int
-selected_message_number(BUFFER *err)
-{
-  /* Do we actually have a current message? */
-  if (!Context || !Context->menu)
-  {
-    strfcpy(err->data, _("No current message"), err->dsize);
-    return -1;
-  }
-  else
-    return ((Context->hdrs[Context->v2r[Context->menu->current]]->msgno)+1);
-}
 
 static int
 scan_range_rel_num (BUFFER *s, regmatch_t pmatch[], int group)
@@ -409,6 +378,19 @@ scan_range_rel_num (BUFFER *s, regmatch_t pmatch[], int group)
     num *= MEGA;
   return num;
 }
+
+#define RANGE_EMPTY ' '
+#define RANGE_DOT '.'
+#define RANGE_CIRCUM '^'
+#define RANGE_DOLLAR '$'
+#define RANGE_NEG '-'
+#define RANGE_POS '+'
+
+struct range_slot
+{
+  int kind;                     /* RANGE_EMPTY etc. */
+  int num;                      /* scanned integer */
+};
 
 static void
 scan_range_rel_slot (BUFFER *s, regmatch_t pmatch[], int group,
@@ -444,6 +426,25 @@ swap_pattern (pattern_t *pat)
 
   num = pat->min; pat->min = pat->max; pat->max = num;
 }
+
+static int
+selected_message_number(BUFFER *err)
+{
+  /* Do we actually have a current message? */
+  if (!Context || !Context->menu)
+  {
+    strfcpy(err->data, _("No current message"), err->dsize);
+    return -1;
+  }
+  else
+    return ((Context->hdrs[Context->v2r[Context->menu->current]]->msgno)+1);
+}
+
+#define RANGE_REL_SLOT_REGEXP \
+    "[[:blank:]]*([.^$]|-?([[:digit:]]+|0x[[:xdigit:]]+)[MmKk]?)?[[:blank:]]*"
+
+#define RANGE_REL_REGEXP ("^" RANGE_REL_SLOT_REGEXP "," RANGE_REL_SLOT_REGEXP)
+#define RANGE_REL_REGEXP_NGROUPS 5
 
 static regex_t range_rel_regexp;
 static int range_rel_regexp_compiled = 0;
