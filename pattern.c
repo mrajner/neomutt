@@ -456,23 +456,29 @@ static regex_t range_rel_regexp;
 static int range_rel_regexp_compiled = 0;
 
 static char*
+report_regerror(int regerr, regex_t *preg, BUFFER *err)
+{
+  size_t ds = err->dsize;
+
+  if (regerror(regerr, preg, err->data, ds) > ds)
+    dprint(2, (debugfile, "warning: buffer too small for regerror\n"));
+  /* The return value is fixed, exists only to shorten code at callsite */
+  return NULL;
+}
+
+static char*
 eat_range_relative (pattern_t *pat, BUFFER *s, BUFFER *err)
 {
   struct range_slot lslot, rslot;
   int regerr;
   regmatch_t pmatch[RANGE_REL_REGEXP_NGROUPS];
-  size_t ds = err->dsize;
 
   /* First time through, compile the big regexp */
   if (!range_rel_regexp_compiled)
   {
     regerr = regcomp(&range_rel_regexp, RANGE_REL_REGEXP, REG_EXTENDED);
     if (regerr)
-    {
-      if (regerror(regerr, &range_rel_regexp, err->data, ds) > ds)
-        dprint(2, (debugfile, "warning: buffer too small for regerror\n"));
-      return NULL;
-    }
+      return report_regerror(regerr, &range_rel_regexp, err);
     range_rel_regexp_compiled = 1;
   }
 
@@ -481,11 +487,7 @@ eat_range_relative (pattern_t *pat, BUFFER *s, BUFFER *err)
   regerr = regexec(&range_rel_regexp, s->dptr,
                    RANGE_REL_REGEXP_NGROUPS, pmatch, 0);
   if (regerr)
-  {
-    if (regerror(regerr, &range_rel_regexp, err->data, ds) > ds)
-      dprint(2, (debugfile, "warning: buffer too small for regerror\n"));
-    return NULL;
-  }
+    return report_regerror(regerr, &range_rel_regexp, err);
 
   /* Snarf the contents of the two sides of the range. */
   scan_range_rel_slot(s, pmatch, 1, &lslot);
