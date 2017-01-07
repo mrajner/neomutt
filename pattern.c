@@ -363,7 +363,7 @@ static int eat_regexp (pattern_t *pat, BUFFER *s, BUFFER *err)
 #define MEGA 1048576
 
 static int
-scan_range_rel_num (BUFFER *s, regmatch_t pmatch[], int group)
+scan_range_num (BUFFER *s, regmatch_t pmatch[], int group)
 {
   int num;
   unsigned char c;
@@ -386,37 +386,41 @@ scan_range_rel_num (BUFFER *s, regmatch_t pmatch[], int group)
 #define RANGE_NEG '-'
 #define RANGE_POS '+'
 
-struct range_slot
-{
-  int kind;                     /* RANGE_EMPTY etc. */
-  int num;                      /* scanned integer */
-};
+#define CTX_HUMAN_MSGNO(c) (((c)->hdrs[(c)->v2r[(c)->menu->current]]->msgno)+1)
 
+/* *right* and *relative* are boolean args
+ * right == 0 means we're processing the left part of the range */
 static void
-scan_range_rel_slot (BUFFER *s, regmatch_t pmatch[], int group,
-                     struct range_slot* rs)
+scan_range_slot (BUFFER *s, regmatch_t pmatch[], int group,
+                 int right, int relative, int *pat_bound)
 {
   unsigned char c;
 
   /* This means the left or right subpattern was empty, e.g. ",." */
   if (pmatch[group].rm_so == -1)
+    *pat_bound = (right ? MUTT_MAXRANGE : 1);
+  else
   {
-    rs->kind = RANGE_EMPTY;
-    return;
+    /* We have something, so determine what */
+    c = (unsigned char)(s->dptr[pmatch[group].rm_so]);
+    switch (c)
+    {
+    case RANGE_CIRCUM:
+      *pat_bound = 1;
+      break;
+    case RANGE_DOLLAR:
+      *pat_bound = MUTT_MAXRANGE;
+      break;
+    case RANGE_DOT:
+      *pat_bound = CTX_HUMAN_MSGNO(Context);
+      break;
+    default:
+      /* Only other possibility: a number */
+      *pat_bound = scan_range_num(s, pmatch, group);
+      if (relative)
+        *pat_bound += CTX_HUMAN_MSGNO(Context);
+    }
   }
-
-  /* We have something, so determine what */
-  c = (unsigned char)(s->dptr[pmatch[group].rm_so]);
-  if ((c == RANGE_DOT) || (c == RANGE_CIRCUM) || (c == RANGE_DOLLAR))
-  {
-    rs->kind = c;
-    return;
-  }
-
-  /* Only other possibility: a number */
-  rs->num = scan_range_rel_num(s, pmatch, group);
-  rs->kind = ((rs->num < 0) ? RANGE_NEG : RANGE_POS);
-  return;
 }
 
 static void
@@ -433,25 +437,6 @@ order_range (pattern_t *pat)
   pat->max = num;
 }
 
-static int
-selected_message_number(BUFFER *err)
-{
-  /* Do we actually have a current message? */
-  if (!Context || !Context->menu)
-  {
-    strfcpy(err->data, _("No current message"), err->dsize);
-    return -1;
-  }
-  else
-    return ((Context->hdrs[Context->v2r[Context->menu->current]]->msgno)+1);
-}
-
-#define RANGE_REL_SLOT_REGEXP \
-    "[[:blank:]]*([.^$]|-?([[:digit:]]+|0x[[:xdigit:]]+)[MmKk]?)?[[:blank:]]*"
-
-#define RANGE_REL_REGEXP ("^" RANGE_REL_SLOT_REGEXP "," RANGE_REL_SLOT_REGEXP)
-#define RANGE_REL_REGEXP_NGROUPS 5
-
 static regex_t range_rel_regexp;
 static int range_rel_regexp_compiled = 0;
 
@@ -466,10 +451,36 @@ report_regerror(int regerr, regex_t *preg, BUFFER *err)
   return NULL;
 }
 
+static int
+is_context_available(BUFFER *s, regmatch_t pmatch[], int relative, BUFFER *err)
+{
+  char *needle;
+
+  /* First decide if we're going to need the context at all.
+   * Relative patterns need it iff they contain a dot or a number.
+   * Absolute patterns only need it if they contain a dot. */
+  needle = strpbrk(s->dptr+pmatch[0].rm_so, (relative ? ".0123456789" : "."));
+  if ((needle == NULL) || (needle >= &s->dptr[pmatch[0].rm_eo]))
+    return 1;
+
+  /* We need a current message.  Do we actually have one? */
+  if (Context && Context->menu)
+    return 1;
+
+  /* Nope. */
+  strfcpy(err->data, _("No current message"), err->dsize);
+  return 0;
+}
+
+#define RANGE_REL_SLOT_REGEXP \
+    "[[:blank:]]*([.^$]|-?([[:digit:]]+|0x[[:xdigit:]]+)[MmKk]?)?[[:blank:]]*"
+
+#define RANGE_REL_REGEXP ("^" RANGE_REL_SLOT_REGEXP "," RANGE_REL_SLOT_REGEXP)
+#define RANGE_REL_REGEXP_NGROUPS 5
+
 static char*
 eat_range_relative (pattern_t *pat, BUFFER *s, BUFFER *err)
 {
-  struct range_slot lslot, rslot;
   int regerr;
   regmatch_t pmatch[RANGE_REL_REGEXP_NGROUPS];
 
@@ -489,56 +500,12 @@ eat_range_relative (pattern_t *pat, BUFFER *s, BUFFER *err)
   if (regerr)
     return report_regerror(regerr, &range_rel_regexp, err);
 
+  if (!is_context_available(s, pmatch, 1, err))
+    return NULL;
+
   /* Snarf the contents of the two sides of the range. */
-  scan_range_rel_slot(s, pmatch, 1, &lslot);
-  scan_range_rel_slot(s, pmatch, 3, &rslot);
-
-  /* Translate into mutt range pattern bounds. */
-  switch (lslot.kind)
-  {
-    case RANGE_EMPTY:
-    case RANGE_CIRCUM:
-      pat->min = 1;
-      break;
-    case RANGE_DOLLAR:
-      pat->min = MUTT_MAXRANGE;
-      break;
-    case RANGE_DOT:
-      pat->min = selected_message_number(err);
-      if (pat->min == -1)
-        return NULL;
-      break;
-    case RANGE_POS:
-    case RANGE_NEG:
-      pat->min = selected_message_number(err);
-      if (pat->min == -1)
-        return NULL;
-      pat->min += lslot.num;
-      break;
-  }
-
-  switch (rslot.kind)
-  {
-    case RANGE_CIRCUM:
-      pat->max = 1;
-      break;
-    case RANGE_EMPTY:
-    case RANGE_DOLLAR:
-      pat->max = MUTT_MAXRANGE;
-      break;
-    case RANGE_DOT:
-      pat->max = selected_message_number(err);
-      if (pat->max == -1)
-        return NULL;
-      break;
-    case RANGE_POS:
-    case RANGE_NEG:
-      pat->max = selected_message_number(err);
-      if (pat->max == -1)
-        return NULL;
-      pat->max += rslot.num;
-      break;
-  }
+  scan_range_slot(s, pmatch, 1, 0, 1, &pat->min);
+  scan_range_slot(s, pmatch, 3, 1, 1, &pat->max);
   dprint(1, (debugfile, "pat->min=%d pat->max=%d\n", pat->min, pat->max));
 
   /* Since we don't enforce order, we must swap bounds if they're backward */
