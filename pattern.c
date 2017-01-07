@@ -361,9 +361,10 @@ static int eat_regexp (pattern_t *pat, BUFFER *s, BUFFER *err)
 
 #define KILO 1024
 #define MEGA 1048576
+#define CTX_HUMAN_MSGNO(c) (((c)->hdrs[(c)->v2r[(c)->menu->current]]->msgno)+1)
 
 static int
-scan_range_num (BUFFER *s, regmatch_t pmatch[], int group)
+scan_range_num (BUFFER *s, regmatch_t pmatch[], int group, int relative)
 {
   int num;
   unsigned char c;
@@ -376,6 +377,8 @@ scan_range_num (BUFFER *s, regmatch_t pmatch[], int group)
     num *= KILO;
   else if (toupper(c) == 'M')
     num *= MEGA;
+  if (relative)
+    num += CTX_HUMAN_MSGNO(Context);
   return num;
 }
 
@@ -386,19 +389,17 @@ scan_range_num (BUFFER *s, regmatch_t pmatch[], int group)
 #define RANGE_NEG '-'
 #define RANGE_POS '+'
 
-#define CTX_HUMAN_MSGNO(c) (((c)->hdrs[(c)->v2r[(c)->menu->current]]->msgno)+1)
-
 /* *right* and *relative* are boolean args
  * right == 0 means we're processing the left part of the range */
-static void
+static int
 scan_range_slot (BUFFER *s, regmatch_t pmatch[], int group,
-                 int right, int relative, int *pat_bound)
+                 int right, int relative)
 {
   unsigned char c;
 
   /* This means the left or right subpattern was empty, e.g. ",." */
   if (pmatch[group].rm_so == -1)
-    *pat_bound = (right ? MUTT_MAXRANGE : 1);
+    return (right ? MUTT_MAXRANGE : 1);
   else
   {
     /* We have something, so determine what */
@@ -406,19 +407,18 @@ scan_range_slot (BUFFER *s, regmatch_t pmatch[], int group,
     switch (c)
     {
     case RANGE_CIRCUM:
-      *pat_bound = 1;
+      return 1;
       break;
     case RANGE_DOLLAR:
-      *pat_bound = MUTT_MAXRANGE;
+      return MUTT_MAXRANGE;
       break;
     case RANGE_DOT:
-      *pat_bound = CTX_HUMAN_MSGNO(Context);
+      return CTX_HUMAN_MSGNO(Context);
       break;
     default:
       /* Only other possibility: a number */
-      *pat_bound = scan_range_num(s, pmatch, group);
-      if (relative)
-        *pat_bound += CTX_HUMAN_MSGNO(Context);
+      return scan_range_num(s, pmatch, group, relative);
+      break;
     }
   }
 }
@@ -504,8 +504,8 @@ eat_range_relative (pattern_t *pat, BUFFER *s, BUFFER *err)
     return NULL;
 
   /* Snarf the contents of the two sides of the range. */
-  scan_range_slot(s, pmatch, 1, 0, 1, &pat->min);
-  scan_range_slot(s, pmatch, 3, 1, 1, &pat->max);
+  pat->min = scan_range_slot(s, pmatch, 1, 0, 1);
+  pat->max = scan_range_slot(s, pmatch, 3, 1, 1);
   dprint(1, (debugfile, "pat->min=%d pat->max=%d\n", pat->min, pat->max));
 
   /* Since we don't enforce order, we must swap bounds if they're backward */
