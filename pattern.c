@@ -363,8 +363,15 @@ static int eat_regexp (pattern_t *pat, BUFFER *s, BUFFER *err)
 #define MEGA 1048576
 #define CTX_HUMAN_MSGNO(c) (((c)->hdrs[(c)->v2r[(c)->menu->current]]->msgno)+1)
 
+/* range kinds: relative or absolute */
+enum
+{
+  RANGE_K_REL,
+  RANGE_K_ABS,
+};
+
 static int
-scan_range_num (BUFFER *s, regmatch_t pmatch[], int group, int relative)
+scan_range_num (BUFFER *s, regmatch_t pmatch[], int group, int kind)
 {
   int num;
   unsigned char c;
@@ -377,7 +384,7 @@ scan_range_num (BUFFER *s, regmatch_t pmatch[], int group, int relative)
     num *= KILO;
   else if (toupper(c) == 'M')
     num *= MEGA;
-  if (relative)
+  if (kind == RANGE_K_REL)
     num += CTX_HUMAN_MSGNO(Context);
   return num;
 }
@@ -386,17 +393,27 @@ scan_range_num (BUFFER *s, regmatch_t pmatch[], int group, int relative)
 #define RANGE_CIRCUM '^'
 #define RANGE_DOLLAR '$'
 
-/* *right* and *relative* are boolean args
- * right == 0 means we're processing the left part of the range */
+/* range sides: left or right */
+enum
+{
+  RANGE_S_LEFT,
+  RANGE_S_RIGHT
+};
+
 static int
 scan_range_slot (BUFFER *s, regmatch_t pmatch[], int group,
-                 int right, int relative)
+                 int side, int kind)
 {
   unsigned char c;
+  static const int empty_val[] =
+    {
+      [RANGE_S_LEFT] = 1,
+      [RANGE_S_RIGHT] = MUTT_MAXRANGE
+    };
 
   /* This means the left or right subpattern was empty, e.g. ",." */
   if (pmatch[group].rm_so == -1)
-    return (right ? MUTT_MAXRANGE : 1);
+    return empty_val[side];
   else
   {
     /* We have something, so determine what */
@@ -414,7 +431,7 @@ scan_range_slot (BUFFER *s, regmatch_t pmatch[], int group,
       break;
     default:
       /* Only other possibility: a number */
-      return scan_range_num(s, pmatch, group, relative);
+      return scan_range_num(s, pmatch, group, kind);
       break;
     }
   }
@@ -449,14 +466,19 @@ report_regerror(int regerr, regex_t *preg, BUFFER *err)
 }
 
 static int
-is_context_available(BUFFER *s, regmatch_t pmatch[], int relative, BUFFER *err)
+is_context_available(BUFFER *s, regmatch_t pmatch[], int kind, BUFFER *err)
 {
   char *needle;
+  const char *hay[] =
+  {
+    [RANGE_K_REL] = ".0123456789",
+    [RANGE_K_ABS] = "."
+  };
 
   /* First decide if we're going to need the context at all.
    * Relative patterns need it iff they contain a dot or a number.
    * Absolute patterns only need it if they contain a dot. */
-  needle = strpbrk(s->dptr+pmatch[0].rm_so, (relative ? ".0123456789" : "."));
+  needle = strpbrk(s->dptr+pmatch[0].rm_so, hay[kind]);
   if ((needle == NULL) || (needle >= &s->dptr[pmatch[0].rm_eo]))
     return 1;
 
@@ -497,12 +519,12 @@ eat_range_relative (pattern_t *pat, BUFFER *s, BUFFER *err)
   if (regerr)
     return report_regerror(regerr, &range_rel_regexp, err);
 
-  if (!is_context_available(s, pmatch, 1, err))
+  if (!is_context_available(s, pmatch, RANGE_K_REL, err))
     return NULL;
 
   /* Snarf the contents of the two sides of the range. */
-  pat->min = scan_range_slot(s, pmatch, 1, 0, 1);
-  pat->max = scan_range_slot(s, pmatch, 3, 1, 1);
+  pat->min = scan_range_slot(s, pmatch, 1, RANGE_S_LEFT, RANGE_K_REL);
+  pat->max = scan_range_slot(s, pmatch, 3, RANGE_S_RIGHT, RANGE_K_REL);
   dprint(1, (debugfile, "pat->min=%d pat->max=%d\n", pat->min, pat->max));
 
   /* Since we don't enforce order, we must swap bounds if they're backward */
