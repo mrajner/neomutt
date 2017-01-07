@@ -470,9 +470,7 @@ eat_range_relative (pattern_t *pat, BUFFER *s, BUFFER *err)
     if (regerr)
     {
       if (regerror(regerr, &range_rel_regexp, err->data, ds) > ds)
-      {
         dprint(2, (debugfile, "warning: buffer too small for regerror\n"));
-      }
       return NULL;
     }
     range_rel_regexp_compiled = 1;
@@ -485,9 +483,7 @@ eat_range_relative (pattern_t *pat, BUFFER *s, BUFFER *err)
   if (regerr)
   {
     if (regerror(regerr, &range_rel_regexp, err->data, ds) > ds)
-    {
       dprint(2, (debugfile, "warning: buffer too small for regerror\n"));
-    }
     return NULL;
   }
 
