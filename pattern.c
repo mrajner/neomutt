@@ -382,7 +382,6 @@ scan_range_num (BUFFER *s, regmatch_t pmatch[], int group, int relative)
   return num;
 }
 
-#define RANGE_EMPTY ' '
 #define RANGE_DOT '.'
 #define RANGE_CIRCUM '^'
 #define RANGE_DOLLAR '$'
