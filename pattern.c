@@ -365,8 +365,6 @@ static int eat_regexp (pattern_t *pat, BUFFER *s, BUFFER *err)
 #define RANGE_REL_REGEXP ("^" RANGE_REL_SLOT_REGEXP "," RANGE_REL_SLOT_REGEXP)
 #define RANGE_REL_REGEXP_NGROUPS 5
 
-#define CTX_HUMAN_MSGNO(c) (((c)->hdrs[(c)->v2r[(c)->menu->current]]->msgno)+1)
-
 #define RANGE_EMPTY ' '
 #define RANGE_DOT '.'
 #define RANGE_CIRCUM '^'
@@ -381,6 +379,19 @@ struct range_slot
   int kind;                     /* RANGE_EMPTY etc. */
   int num;                      /* scanned integer */
 };
+
+static int
+selected_message_number(BUFFER *err)
+{
+  /* Do we actually have a current message? */
+  if (!Context || !Context->menu)
+  {
+    strfcpy(err->data, _("No current message"), err->dsize);
+    return -1;
+  }
+  else
+    return ((Context->hdrs[Context->v2r[Context->menu->current]]->msgno)+1);
+}
 
 static int
 scan_range_rel_num (BUFFER *s, regmatch_t pmatch[], int group)
@@ -445,13 +456,6 @@ eat_range_relative (pattern_t *pat, BUFFER *s, BUFFER *err)
   regmatch_t pmatch[RANGE_REL_REGEXP_NGROUPS];
   size_t ds = err->dsize;
 
-  /* Do we actually have a current message? */
-  if (!Context || !Context->menu)
-  {
-    strfcpy(err->data, _("No current message"), ds);
-    return NULL;
-  }
-
   /* First time through, compile the big regexp */
   if (!range_rel_regexp_compiled)
   {
@@ -495,11 +499,16 @@ eat_range_relative (pattern_t *pat, BUFFER *s, BUFFER *err)
       pat->min = MUTT_MAXRANGE;
       break;
     case RANGE_DOT:
-      pat->min = CTX_HUMAN_MSGNO(Context);
+      pat->min = selected_message_number(err);
+      if (pat->min == -1)
+        return NULL;
       break;
     case RANGE_POS:
     case RANGE_NEG:
-      pat->min = CTX_HUMAN_MSGNO(Context) + lslot.num;
+      pat->min = selected_message_number(err);
+      if (pat->min == -1)
+        return NULL;
+      pat->min += lslot.num;
       break;
   }
 
@@ -513,11 +522,16 @@ eat_range_relative (pattern_t *pat, BUFFER *s, BUFFER *err)
       pat->max = MUTT_MAXRANGE;
       break;
     case RANGE_DOT:
-      pat->max = CTX_HUMAN_MSGNO(Context);
+      pat->max = selected_message_number(err);
+      if (pat->max == -1)
+        return NULL;
       break;
     case RANGE_POS:
     case RANGE_NEG:
-      pat->max = CTX_HUMAN_MSGNO(Context) + rslot.num;
+      pat->max = selected_message_number(err);
+      if (pat->max == -1)
+        return NULL;
+      pat->max += rslot.num;
       break;
   }
   dprint(1, (debugfile, "pat->min=%d pat->max=%d\n", pat->min, pat->max));
