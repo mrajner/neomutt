@@ -438,9 +438,9 @@ order_range (pattern_t *pat)
 {
   int num;
 
-  if (pat->min != MUTT_MAXRANGE)
+  if ((pat->min != MUTT_MAXRANGE) && (pat->min <= pat->max))
     return;
-  else if ((pat->max == MUTT_MAXRANGE) && (pat->min <= pat->max))
+  else if ((pat->max == MUTT_MAXRANGE) || (pat->min <= pat->max))
     return;
   num = pat->min;
   pat->min = pat->max;
