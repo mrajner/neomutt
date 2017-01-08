@@ -461,8 +461,8 @@ report_regerror(int regerr, regex_t *preg, BUFFER *err)
 static int
 is_context_available(BUFFER *s, regmatch_t pmatch[], int kind, BUFFER *err)
 {
-  char *needle;
-  const char *hay[] =
+  char *context_loc;
+  const char *context_req_chars[] =
   {
     [RANGE_K_REL] = ".0123456789",
     [RANGE_K_ABS] = "."
@@ -471,8 +471,8 @@ is_context_available(BUFFER *s, regmatch_t pmatch[], int kind, BUFFER *err)
   /* First decide if we're going to need the context at all.
    * Relative patterns need it iff they contain a dot or a number.
    * Absolute patterns only need it if they contain a dot. */
-  needle = strpbrk(s->dptr+pmatch[0].rm_so, hay[kind]);
-  if ((needle == NULL) || (needle >= &s->dptr[pmatch[0].rm_eo]))
+  context_loc = strpbrk(s->dptr+pmatch[0].rm_so, context_req_chars[kind]);
+  if ((context_loc == NULL) || (context_loc >= &s->dptr[pmatch[0].rm_eo]))
     return 1;
 
   /* We need a current message.  Do we actually have one? */
