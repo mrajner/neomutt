@@ -447,9 +447,6 @@ order_range (pattern_t *pat)
   pat->max = num;
 }
 
-static regex_t range_rel_regexp;
-static int range_rel_regexp_compiled = 0;
-
 static char*
 report_regerror(int regerr, regex_t *preg, BUFFER *err)
 {
@@ -491,36 +488,51 @@ is_context_available(BUFFER *s, regmatch_t pmatch[], int kind, BUFFER *err)
     "[[:blank:]]*([.^$]|-?([[:digit:]]+|0x[[:xdigit:]]+)[MmKk]?)?[[:blank:]]*"
 
 #define RANGE_REL_REGEXP ("^" RANGE_REL_SLOT_REGEXP "," RANGE_REL_SLOT_REGEXP)
-#define RANGE_REL_REGEXP_NGROUPS 5
+
+#define RANGE_REGEXP_GROUPS 5
+
+struct range_regexp
+{
+  const char* raw;              /* regexp as string */
+  int lgrp;                     /* paren group matching the left side */
+  int rgrp;                     /* paren group matching the right side */
+  int ready;                    /* compiled yet? */
+  regex_t cooked;               /* compiled form */
+};
+
+static struct range_regexp range_regexps[] =
+{
+  [RANGE_K_REL] = {.raw = RANGE_REL_REGEXP, .lgrp = 1, .rgrp = 3, .ready = 0},
+};
 
 static char*
-eat_range_relative (pattern_t *pat, BUFFER *s, BUFFER *err)
+eat_range_by_regexp (pattern_t *pat, BUFFER *s, int kind, BUFFER *err)
 {
   int regerr;
-  regmatch_t pmatch[RANGE_REL_REGEXP_NGROUPS];
+  regmatch_t pmatch[RANGE_REGEXP_GROUPS];
+  struct range_regexp *pspec = &range_regexps[kind];
 
   /* First time through, compile the big regexp */
-  if (!range_rel_regexp_compiled)
+  if (!pspec->ready)
   {
-    regerr = regcomp(&range_rel_regexp, RANGE_REL_REGEXP, REG_EXTENDED);
+    regerr = regcomp(&pspec->cooked, pspec->raw, REG_EXTENDED);
     if (regerr)
-      return report_regerror(regerr, &range_rel_regexp, err);
-    range_rel_regexp_compiled = 1;
+      return report_regerror(regerr, &pspec->cooked, err);
+    pspec->ready = 1;
   }
 
   /* Match the pattern buffer against the compiled regexp.
    * No match means syntax error. */
-  regerr = regexec(&range_rel_regexp, s->dptr,
-                   RANGE_REL_REGEXP_NGROUPS, pmatch, 0);
+  regerr = regexec(&pspec->cooked, s->dptr, RANGE_REGEXP_GROUPS, pmatch, 0);
   if (regerr)
-    return report_regerror(regerr, &range_rel_regexp, err);
+    return report_regerror(regerr, &pspec->cooked, err);
 
-  if (!is_context_available(s, pmatch, RANGE_K_REL, err))
+  if (!is_context_available(s, pmatch, kind, err))
     return NULL;
 
   /* Snarf the contents of the two sides of the range. */
-  pat->min = scan_range_slot(s, pmatch, 1, RANGE_S_LEFT, RANGE_K_REL);
-  pat->max = scan_range_slot(s, pmatch, 3, RANGE_S_RIGHT, RANGE_K_REL);
+  pat->min = scan_range_slot(s, pmatch, pspec->lgrp, RANGE_S_LEFT, kind);
+  pat->max = scan_range_slot(s, pmatch, pspec->rgrp, RANGE_S_RIGHT, kind);
   dprint(1, (debugfile, "pat->min=%d pat->max=%d\n", pat->min, pat->max));
 
   /* Since we don't enforce order, we must swap bounds if they're backward */
@@ -620,7 +632,7 @@ int eat_range (pattern_t *pat, BUFFER *s, BUFFER *err)
     tmp = eat_range_fixed(pat, s);
   else
   {
-    tmp = eat_range_relative(pat, s, err);
+    tmp = eat_range_by_regexp(pat, s, RANGE_K_REL, err);
     if (!tmp)
       return -1;
   }
