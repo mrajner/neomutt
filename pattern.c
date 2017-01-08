@@ -489,6 +489,13 @@ is_context_available(BUFFER *s, regmatch_t pmatch[], int kind, BUFFER *err)
 
 #define RANGE_REL_RX ("^" RANGE_REL_SLOT_RX "," RANGE_REL_SLOT_RX)
 
+/* Almost the same, but no negative numbers allowed */
+
+#define RANGE_ABS_SLOT_RX \
+    "[[:blank:]]*([.^$]|([[:digit:]]+|0x[[:xdigit:]]+)[MmKk]?)?[[:blank:]]*"
+
+#define RANGE_ABS_RX ("^" RANGE_ABS_SLOT_RX "-" RANGE_ABS_SLOT_RX)
+
 #define RANGE_RX_GROUPS 5
 
 struct range_regexp
@@ -503,6 +510,7 @@ struct range_regexp
 static struct range_regexp range_regexps[] =
 {
   [RANGE_K_REL] = {.raw = RANGE_REL_RX, .lgrp = 1, .rgrp = 3, .ready = 0},
+  [RANGE_K_ABS] = {.raw = RANGE_ABS_RX, .lgrp = 1, .rgrp = 3, .ready = 0},
 };
 
 static char*
@@ -542,76 +550,6 @@ eat_range_by_regexp (pattern_t *pat, BUFFER *s, int kind, BUFFER *err)
   return &s->dptr[pmatch[0].rm_eo];
 }
 
-static char * eat_range_fixed (pattern_t *pat, BUFFER *s)
-{
-  char *tmp;
-  int do_exclusive = 0;
-
-  if (*s->dptr == '<')
-    do_exclusive = 1;
-  if ((*s->dptr != '-') && (*s->dptr != '<'))
-  {
-    /* range minimum */
-    if (*s->dptr == '>')
-    {
-      pat->max = MUTT_MAXRANGE;
-      pat->min = strtol (s->dptr + 1, &tmp, 0) + 1; /* exclusive range */
-    }
-    else
-      pat->min = strtol (s->dptr, &tmp, 0);
-    if (toupper ((unsigned char) *tmp) == 'K') /* is there a prefix? */
-    {
-      pat->min *= 1024;
-      tmp++;
-    }
-    else if (toupper ((unsigned char) *tmp) == 'M')
-    {
-      pat->min *= 1048576;
-      tmp++;
-    }
-    if (*s->dptr == '>')
-    {
-      s->dptr = tmp;
-      return tmp;
-    }
-    if (*tmp != '-')
-    {
-      /* exact value */
-      pat->max = pat->min;
-      s->dptr = tmp;
-      return tmp;
-    }
-    tmp++;
-  }
-  else
-  {
-    s->dptr++;
-    tmp = s->dptr;
-  }
-  
-  if (isdigit ((unsigned char) *tmp))
-  {
-    /* range maximum */
-    pat->max = strtol (tmp, &tmp, 0);
-    if (toupper ((unsigned char) *tmp) == 'K')
-    {
-      pat->max *= 1024;
-      tmp++;
-    }
-    else if (toupper ((unsigned char) *tmp) == 'M')
-    {
-      pat->max *= 1048576;
-      tmp++;
-    }
-    if (do_exclusive)
-      (pat->max)--;
-  }
-  else
-    pat->max = MUTT_MAXRANGE;
-
-  return tmp;
-}
-
 int eat_range (pattern_t *pat, BUFFER *s, BUFFER *err)
 {
   char *tmp = NULL;
@@ -627,15 +565,14 @@ int eat_range (pattern_t *pat, BUFFER *s, BUFFER *err)
     skip_quote = 1;
   }
 
-  /* We're looking at a new-style (relative) pattern iff a comma occurs in it */
-  if (strchr(s->dptr, ',') == NULL)
-    tmp = eat_range_fixed(pat, s);
-  else
-  {
+  /* Try to parse as absolute range. */
+  tmp = eat_range_by_regexp(pat, s, RANGE_K_ABS, err);
+  if (tmp == NULL)
+    /* It didn't match, so try as relative. */
     tmp = eat_range_by_regexp(pat, s, RANGE_K_REL, err);
-    if (!tmp)
-      return -1;
-  }
+  if (tmp == NULL)
+    /* Argh!  Still no joy! */
+    return -1;
 
   if (skip_quote && (*tmp == '"'))
     tmp++;
