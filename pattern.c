@@ -447,7 +447,15 @@ order_range (pattern_t *pat)
   pat->max = num;
 }
 
-static char*
+/* Error codes for eat_range_by_regexp */
+enum
+{
+  RANGE_E_OK,
+  RANGE_E_SYNTAX,
+  RANGE_E_CTX,
+};
+
+static int
 report_regerror(int regerr, regex_t *preg, BUFFER *err)
 {
   size_t ds = err->dsize;
@@ -455,7 +463,7 @@ report_regerror(int regerr, regex_t *preg, BUFFER *err)
   if (regerror(regerr, preg, err->data, ds) > ds)
     dprint(2, (debugfile, "warning: buffer too small for regerror\n"));
   /* The return value is fixed, exists only to shorten code at callsite */
-  return NULL;
+  return RANGE_E_SYNTAX;
 }
 
 static int
@@ -513,7 +521,7 @@ static struct range_regexp range_regexps[] =
   [RANGE_K_ABS] = {.raw = RANGE_ABS_RX, .lgrp = 1, .rgrp = 3, .ready = 0},
 };
 
-static char*
+static int
 eat_range_by_regexp (pattern_t *pat, BUFFER *s, int kind, BUFFER *err)
 {
   int regerr;
@@ -536,7 +544,7 @@ eat_range_by_regexp (pattern_t *pat, BUFFER *s, int kind, BUFFER *err)
     return report_regerror(regerr, &pspec->cooked, err);
 
   if (!is_context_available(s, pmatch, kind, err))
-    return NULL;
+    return RANGE_E_CTX;
 
   /* Snarf the contents of the two sides of the range. */
   pat->min = scan_range_slot(s, pmatch, pspec->lgrp, RANGE_S_LEFT, kind);
@@ -546,14 +554,16 @@ eat_range_by_regexp (pattern_t *pat, BUFFER *s, int kind, BUFFER *err)
   /* Since we don't enforce order, we must swap bounds if they're backward */
   order_range(pat);
 
-  /* Return pointer past the entire match. */
-  return &s->dptr[pmatch[0].rm_eo];
+  /* Slide pointer past the entire match. */
+  s->dptr += pmatch[0].rm_eo;
+  return RANGE_E_OK;
 }
 
 int eat_range (pattern_t *pat, BUFFER *s, BUFFER *err)
 {
-  char *tmp = NULL;
   int skip_quote = 0;
+  int i_kind;
+  static const int range_kinds[] = {RANGE_K_ABS, RANGE_K_REL, -1};
 
   /*
    * If simple_search is set to "~m %s", the range will have double quotes
@@ -565,21 +575,26 @@ int eat_range (pattern_t *pat, BUFFER *s, BUFFER *err)
     skip_quote = 1;
   }
 
-  /* Try to parse as absolute range. */
-  tmp = eat_range_by_regexp(pat, s, RANGE_K_ABS, err);
-  if (tmp == NULL)
-    /* It didn't match, so try as relative. */
-    tmp = eat_range_by_regexp(pat, s, RANGE_K_REL, err);
-  if (tmp == NULL)
-    /* Argh!  Still no joy! */
-    return -1;
-
-  if (skip_quote && (*tmp == '"'))
-    tmp++;
-
-  SKIPWS (tmp);
-  s->dptr = tmp;
-  return 0;
+  /* There are just 2 for now, but there'll be more, hence the loop */
+  for (i_kind = 0; range_kinds[i_kind] != -1; ++i_kind)
+  {
+    switch (eat_range_by_regexp(pat, s, range_kinds[i_kind], err))
+    {
+    case RANGE_E_CTX:
+      /* This means it matched syntactically but lacked context.
+       * No point in continuing. */
+      break;
+    case RANGE_E_SYNTAX:
+      /* Try another syntax, then */
+      continue;
+    case RANGE_E_OK:
+      if (skip_quote && (*s->dptr == '"'))
+        s->dptr++;
+      SKIPWS (s->dptr);
+      return 0;
+    }
+  }
+  return -1;
 }
 
 static const char *getDate (const char *s, struct tm *t, BUFFER *err)
