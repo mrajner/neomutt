@@ -576,7 +576,7 @@ int eat_range (pattern_t *pat, BUFFER *s, BUFFER *err)
   }
 
   /* There are just 2 for now, but there'll be more, hence the loop */
-  for (i_kind = RANGE_K_ABS; i_kind != RANGE_K_INVALID; ++i_kind)
+  for (i_kind = 0; i_kind != RANGE_K_INVALID; ++i_kind)
   {
     switch (eat_range_by_regexp(pat, s, i_kind, err))
     {
