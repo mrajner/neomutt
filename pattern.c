@@ -422,17 +422,13 @@ scan_range_slot (BUFFER *s, regmatch_t pmatch[], int group,
     {
     case RANGE_CIRCUM:
       return 1;
-      break;
     case RANGE_DOLLAR:
       return MUTT_MAXRANGE;
-      break;
     case RANGE_DOT:
       return CTX_HUMAN_MSGNO(Context);
-      break;
     default:
       /* Only other possibility: a number */
       return scan_range_num(s, pmatch, group, kind);
-      break;
     }
   }
 }
