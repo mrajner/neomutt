@@ -484,12 +484,12 @@ is_context_available(BUFFER *s, regmatch_t pmatch[], int kind, BUFFER *err)
   return 0;
 }
 
-#define RANGE_REL_SLOT_REGEXP \
+#define RANGE_REL_SLOT_RX \
     "[[:blank:]]*([.^$]|-?([[:digit:]]+|0x[[:xdigit:]]+)[MmKk]?)?[[:blank:]]*"
 
-#define RANGE_REL_REGEXP ("^" RANGE_REL_SLOT_REGEXP "," RANGE_REL_SLOT_REGEXP)
+#define RANGE_REL_RX ("^" RANGE_REL_SLOT_RX "," RANGE_REL_SLOT_RX)
 
-#define RANGE_REGEXP_GROUPS 5
+#define RANGE_RX_GROUPS 5
 
 struct range_regexp
 {
@@ -502,14 +502,14 @@ struct range_regexp
 
 static struct range_regexp range_regexps[] =
 {
-  [RANGE_K_REL] = {.raw = RANGE_REL_REGEXP, .lgrp = 1, .rgrp = 3, .ready = 0},
+  [RANGE_K_REL] = {.raw = RANGE_REL_RX, .lgrp = 1, .rgrp = 3, .ready = 0},
 };
 
 static char*
 eat_range_by_regexp (pattern_t *pat, BUFFER *s, int kind, BUFFER *err)
 {
   int regerr;
-  regmatch_t pmatch[RANGE_REGEXP_GROUPS];
+  regmatch_t pmatch[RANGE_RX_GROUPS];
   struct range_regexp *pspec = &range_regexps[kind];
 
   /* First time through, compile the big regexp */
@@ -523,7 +523,7 @@ eat_range_by_regexp (pattern_t *pat, BUFFER *s, int kind, BUFFER *err)
 
   /* Match the pattern buffer against the compiled regexp.
    * No match means syntax error. */
-  regerr = regexec(&pspec->cooked, s->dptr, RANGE_REGEXP_GROUPS, pmatch, 0);
+  regerr = regexec(&pspec->cooked, s->dptr, RANGE_RX_GROUPS, pmatch, 0);
   if (regerr)
     return report_regerror(regerr, &pspec->cooked, err);
 
