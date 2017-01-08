@@ -363,11 +363,12 @@ static int eat_regexp (pattern_t *pat, BUFFER *s, BUFFER *err)
 #define MEGA 1048576
 #define CTX_HUMAN_MSGNO(c) (((c)->hdrs[(c)->v2r[(c)->menu->current]]->msgno)+1)
 
-/* range kinds: relative or absolute */
 enum
 {
   RANGE_K_REL,
   RANGE_K_ABS,
+  /* add new ones HERE */
+  RANGE_K_INVALID
 };
 
 static int
@@ -563,7 +564,6 @@ int eat_range (pattern_t *pat, BUFFER *s, BUFFER *err)
 {
   int skip_quote = 0;
   int i_kind;
-  static const int range_kinds[] = {RANGE_K_ABS, RANGE_K_REL, -1};
 
   /*
    * If simple_search is set to "~m %s", the range will have double quotes
@@ -576,9 +576,9 @@ int eat_range (pattern_t *pat, BUFFER *s, BUFFER *err)
   }
 
   /* There are just 2 for now, but there'll be more, hence the loop */
-  for (i_kind = 0; range_kinds[i_kind] != -1; ++i_kind)
+  for (i_kind = RANGE_K_ABS; i_kind != RANGE_K_INVALID; ++i_kind)
   {
-    switch (eat_range_by_regexp(pat, s, range_kinds[i_kind], err))
+    switch (eat_range_by_regexp(pat, s, i_kind, err))
     {
     case RANGE_E_CTX:
       /* This means it matched syntactically but lacked context.
