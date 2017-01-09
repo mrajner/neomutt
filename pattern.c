@@ -367,6 +367,8 @@ enum
 {
   RANGE_K_REL,
   RANGE_K_ABS,
+  RANGE_K_LT,
+  RANGE_K_GT,
   /* add new ones HERE */
   RANGE_K_INVALID
 };
@@ -385,14 +387,24 @@ scan_range_num (BUFFER *s, regmatch_t pmatch[], int group, int kind)
     num *= KILO;
   else if (toupper(c) == 'M')
     num *= MEGA;
-  if (kind == RANGE_K_REL)
-    num += CTX_HUMAN_MSGNO(Context);
-  return num;
+  switch (kind)
+  {
+  case RANGE_K_REL:
+    return num + CTX_HUMAN_MSGNO(Context);
+  case RANGE_K_LT:
+    return num - 1;
+  case RANGE_K_GT:
+    return num + 1;
+  default:
+    return num;
+  }
 }
 
 #define RANGE_DOT '.'
 #define RANGE_CIRCUM '^'
 #define RANGE_DOLLAR '$'
+#define RANGE_LT '<'
+#define RANGE_GT '>'
 
 /* range sides: left or right */
 enum
@@ -402,7 +414,7 @@ enum
 };
 
 static int
-scan_range_slot (BUFFER *s, regmatch_t pmatch[], int group,
+scan_range_slot (BUFFER *s, regmatch_t pmatch[], int grp,
                  int side, int kind)
 {
   unsigned char c;
@@ -413,12 +425,12 @@ scan_range_slot (BUFFER *s, regmatch_t pmatch[], int group,
     };
 
   /* This means the left or right subpattern was empty, e.g. ",." */
-  if (pmatch[group].rm_so == -1)
+  if ((pmatch[grp].rm_so == -1) || (pmatch[grp].rm_so == pmatch[grp].rm_eo))
     return empty_val[side];
   else
   {
     /* We have something, so determine what */
-    c = (unsigned char)(s->dptr[pmatch[group].rm_so]);
+    c = (unsigned char)(s->dptr[pmatch[grp].rm_so]);
     switch (c)
     {
     case RANGE_CIRCUM:
@@ -427,9 +439,12 @@ scan_range_slot (BUFFER *s, regmatch_t pmatch[], int group,
       return MUTT_MAXRANGE;
     case RANGE_DOT:
       return CTX_HUMAN_MSGNO(Context);
+    case RANGE_LT:
+    case RANGE_GT:
+      return scan_range_num(s, pmatch, grp+1, kind);
     default:
       /* Only other possibility: a number */
-      return scan_range_num(s, pmatch, group, kind);
+      return scan_range_num(s, pmatch, grp, kind);
     }
   }
 }
@@ -474,7 +489,9 @@ is_context_available(BUFFER *s, regmatch_t pmatch[], int kind, BUFFER *err)
   const char *context_req_chars[] =
   {
     [RANGE_K_REL] = ".0123456789",
-    [RANGE_K_ABS] = "."
+    [RANGE_K_ABS] = ".",
+    [RANGE_K_LT] = "",
+    [RANGE_K_GT] = "",
   };
 
   /* First decide if we're going to need the context at all.
@@ -493,17 +510,23 @@ is_context_available(BUFFER *s, regmatch_t pmatch[], int kind, BUFFER *err)
   return 0;
 }
 
-#define RANGE_REL_SLOT_RX \
-    "[[:blank:]]*([.^$]|-?([[:digit:]]+|0x[[:xdigit:]]+)[MmKk]?)?[[:blank:]]*"
+#define RANGE_NUM_RX "([[:digit:]]+|0x[[:xdigit:]]+)[MmKk]?"
 
-#define RANGE_REL_RX ("^" RANGE_REL_SLOT_RX "," RANGE_REL_SLOT_RX)
+#define RANGE_REL_SLOT_RX \
+    "[[:blank:]]*([.^$]|-?" RANGE_NUM_RX ")?[[:blank:]]*"
+
+#define RANGE_REL_RX "^" RANGE_REL_SLOT_RX "," RANGE_REL_SLOT_RX
 
 /* Almost the same, but no negative numbers allowed */
-
 #define RANGE_ABS_SLOT_RX \
-    "[[:blank:]]*([.^$]|([[:digit:]]+|0x[[:xdigit:]]+)[MmKk]?)?[[:blank:]]*"
+    "[[:blank:]]*([.^$]|" RANGE_NUM_RX ")?[[:blank:]]*"
 
-#define RANGE_ABS_RX ("^" RANGE_ABS_SLOT_RX "-" RANGE_ABS_SLOT_RX)
+#define RANGE_ABS_RX "^" RANGE_ABS_SLOT_RX "-" RANGE_ABS_SLOT_RX
+
+/* Frist group is intentionally empty */
+#define RANGE_LT_RX "^()[[:blank:]]*(<[[:blank:]]*" RANGE_NUM_RX ")[[:blank:]]*"
+
+#define RANGE_GT_RX "^()[[:blank:]]*(>[[:blank:]]*" RANGE_NUM_RX ")[[:blank:]]*"
 
 #define RANGE_RX_GROUPS 5
 
@@ -520,6 +543,8 @@ static struct range_regexp range_regexps[] =
 {
   [RANGE_K_REL] = {.raw = RANGE_REL_RX, .lgrp = 1, .rgrp = 3, .ready = 0},
   [RANGE_K_ABS] = {.raw = RANGE_ABS_RX, .lgrp = 1, .rgrp = 3, .ready = 0},
+  [RANGE_K_LT] = {.raw = RANGE_LT_RX, .lgrp = 1, .rgrp = 2, .ready = 0},
+  [RANGE_K_GT] = {.raw = RANGE_GT_RX, .lgrp = 2, .rgrp = 1, .ready = 0},
 };
 
 static int
