@@ -526,6 +526,39 @@ crc_matches(const char *d, unsigned int crc)
   return (crc == mycrc);
 }
 
+/**
+ * create_hcache_dir - Create parent dirs for the hcache database
+ * @path: Database filename
+ * @return
+ * *	1 Success
+ * *	0 Failure (errno set)
+ */
+static int create_hcache_dir(const char *path)
+{
+  if (!path)
+    return 0;
+
+  static char dir[_POSIX_PATH_MAX];
+  strfcpy (dir, path, sizeof(dir));
+
+  char *p = strrchr (dir, '/');
+  if (!p)
+    return 1;
+
+  *p = 0;
+
+  struct stat sb;
+  if ((stat(dir, &sb) == 0) && S_ISDIR(sb.st_mode))
+    return 1;
+
+  if (mutt_mkdir (dir, S_IRWXU | S_IRWXG | S_IRWXO) == 0)
+    return 1;
+
+  mutt_error (_("Can't create %s: %s."), dir, strerror (errno));
+  mutt_sleep (2);
+  return 0;
+}
+
 /* Append md5sumed folder to path if path is a directory. */
 static const char *
 mutt_hcache_per_folder(const char *path, const char *folder,
@@ -534,7 +567,6 @@ mutt_hcache_per_folder(const char *path, const char *folder,
   static char hcpath[_POSIX_PATH_MAX];
   struct stat sb;
   unsigned char md5sum[16];
-  char* s;
   int ret, plen;
 #ifndef HAVE_ICONV
   const char *chs = Charset && *Charset ? Charset : 
@@ -544,8 +576,10 @@ mutt_hcache_per_folder(const char *path, const char *folder,
   plen = mutt_strlen (path);
 
   ret = stat(path, &sb);
-  if (ret < 0 && path[plen-1] != '/')
+  if ((ret < 0) && (path[plen-1] != '/'))
   {
+    create_hcache_dir(path);
+
 #ifdef HAVE_ICONV
     return path;
 #else
@@ -612,17 +646,7 @@ mutt_hcache_per_folder(const char *path, const char *folder,
   if (stat (hcpath, &sb) >= 0)
     return hcpath;
 
-  s = strchr (hcpath + 1, '/');
-  while (s)
-  {
-    /* create missing path components */
-    *s = '\0';
-    if (stat (hcpath, &sb) < 0 && (errno != ENOENT || mkdir (hcpath, 0777) < 0))
-      return path;
-    *s = '/';
-    s = strchr (s + 1, '/');
-  }
-
+  create_hcache_dir(hcpath);
   return hcpath;
 }
 
