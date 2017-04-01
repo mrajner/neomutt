@@ -1153,6 +1153,8 @@ static int parse_group (BUFFER *buf, BUFFER *s, unsigned long data, BUFFER *err)
 	  { 
 	    snprintf (err->data, err->dsize, _("%sgroup: warning: bad IDN '%s'.\n"),
 		      data == 1 ? "un" : "", estr);
+            rfc822_free_address (&addr);
+            FREE(&estr);
 	    goto bail;
 	  }
 	  if (data == MUTT_GROUP)
@@ -1280,13 +1282,14 @@ static int parse_unattach_list (BUFFER *buf, BUFFER *s, LIST **ldata, BUFFER *er
 {
   ATTACH_MATCH *a;
   LIST *lp, *lastp, *newlp;
-  char *tmp;
+  char *tmp = NULL;
   int major;
   char *minor;
 
   do
   {
     mutt_extract_token (buf, s, 0);
+    FREE(&tmp);
 
     if (!ascii_strcasecmp(buf->data, "any"))
       tmp = safe_strdup("*/.*");
@@ -1617,6 +1620,7 @@ static int parse_alias (BUFFER *buf, BUFFER *s, unsigned long data, BUFFER *err)
   {
     snprintf (err->data, err->dsize, _("Warning: Bad IDN '%s' in alias '%s'.\n"),
 	      estr, tmp->name);
+    FREE(&estr);
     goto bail;
   }
 
@@ -3666,7 +3670,8 @@ void mutt_init (int skip_sys_rc, LIST *commands)
 
   Groups = hash_create (1031, 0);
   /* reverse alias keys need to be strdup'ed because of idna conversions */
-  ReverseAlias = hash_create (1031, MUTT_HASH_STRCASECMP | MUTT_HASH_STRDUP_KEYS);
+  ReverseAlias = hash_create (1031, MUTT_HASH_STRCASECMP | MUTT_HASH_STRDUP_KEYS |
+                              MUTT_HASH_ALLOW_DUPS);
 #ifdef USE_NOTMUCH
   TagTransforms = hash_create (64, 1);
   TagFormats = hash_create (64, 0);
@@ -3896,7 +3901,10 @@ void mutt_init (int skip_sys_rc, LIST *commands)
 
     char *config = mutt_find_cfg (Homedir, xdg_cfg_home);
     if (config)
+    {
       Muttrc = mutt_add_list (Muttrc, config);
+      FREE(&config);
+    }
   }
   else
   {
@@ -4079,7 +4087,7 @@ int parse_tag_transforms (BUFFER *b, BUFFER *s, unsigned long data, BUFFER *err)
       continue;
     }
 
-    hash_insert(TagTransforms, tag, transform, 0);
+    hash_insert(TagTransforms, tag, transform);
   }
   return 0;
 }
@@ -4110,7 +4118,7 @@ int parse_tag_formats (BUFFER *b, BUFFER *s, unsigned long data, BUFFER *err)
       continue;
     }
 
-    hash_insert(TagFormats, format, tag, 0);
+    hash_insert(TagFormats, format, tag);
   }
   return 0;
 }

@@ -10411,7 +10411,7 @@ set pgp_encrypt_self = &quot;no&quot;
 
   <sect2 id="fmemopen-known-bugs">
     <title>Known Bugs</title>
-    <para>None</para>
+    <para><ulink url="https://bugs.debian.org/cgi-bin/bugreport.cgi?bug=834408"> debian bug 834408 </ulink></para>
   </sect2>
 
   <sect2 id="fmemopen-credits">
@@ -12775,7 +12775,7 @@ bind index,pager &gt; vfolder-window-forward
 #              &quot;deleted&quot; &quot;GD&quot; \
 #              &quot;invites&quot; &quot;Gi&quot;
 
-# set index_format='4C %S %[%y.%m.%d] %-18.18n %?GU?%GU&amp; ? %?GR?%GR&amp; ? %?GI?%GI&amp; ? %s'
+# set index_format='%4C %S %[%y.%m.%d] %-18.18n %?GU?%GU&amp; ? %?GR?%GR&amp; ? %?GI?%GI&amp; ? %s'
 
 # --------------------------------------------------------------------------
 # COLORS - some unpleasant examples are given
@@ -13382,12 +13382,14 @@ set sort_browser="reverse-size"
       </arg>
 
       <command>unsidebar_whitelist<anchor id="unsidebar-whitelist"/></command>
+      <group choice="req">
       <arg choice="plain">
         <replaceable class="parameter">*</replaceable>
       </arg>
       <arg choice="plain" rep="repeat">
         <replaceable class="parameter">mailbox</replaceable>
       </arg>
+      </group>
     </cmdsynopsis>
 
     <para>

@@ -33,40 +33,69 @@ int getdnsdomainname (char *d, size_t len)
 {
   int ret = -1;
 
-#ifdef HAVE_GETADDRINFO
-  char *node;
-  long node_len;
+#if defined HAVE_GETADDRINFO || defined HAVE_GETADDRINFO_A
+  char node[STRING];
+  if (gethostname(node, sizeof(node)))
+    return ret;
+
   struct addrinfo hints;
-  struct addrinfo *h;
-  char *p;
+  struct addrinfo *h = NULL;
 
   *d = '\0';
   memset(&hints, 0, sizeof (struct addrinfo));
   hints.ai_flags = AI_CANONNAME;
   hints.ai_family = AF_UNSPEC;
 
-  /* A DNS name can actually be only 253 octets, string is 256 */
-  if ((node_len = sysconf(_SC_HOST_NAME_MAX)) == -1)
-    node_len = STRING;
-  node = safe_malloc(node_len + 1);
-  if (gethostname(node, node_len))
-    ret = -1;
-  else if (getaddrinfo(node, NULL, &hints, &h))
-    ret = -1;
-  else
+#ifdef HAVE_GETADDRINFO_A
+
+  /* Allow 0.1 seconds to get the FQDN (fully-qualified domain name).
+   * If it takes longer, the system is mis-configured and the network is not
+   * working properly, so...
+   */
+  int status;
+  struct timespec timeout = {0, 100000000};
+  struct gaicb *reqs[1];
+  reqs[0] = safe_calloc(1, sizeof(*reqs[0]));
+  reqs[0]->ar_name = node;
+  reqs[0]->ar_request = &hints;
+  if (getaddrinfo_a(GAI_NOWAIT, reqs, 1, NULL) == 0)
   {
-    if (!(p = strchr(h->ai_canonname, '.')))
-      ret = -1;
-    else
+    gai_suspend((const struct gaicb * const *) reqs, 1, &timeout);
+    status = gai_error(reqs[0]);
+    if (status == 0)
+      h = reqs[0]->ar_result;
+    else if (status == EAI_INPROGRESS)
     {
-      strfcpy(d, ++p, len);
-      ret = 0;
-      mutt_debug (1, "getdnsdomainname(): %s\n", d);
+      mutt_debug(1, "getdnsdomainname timeout\n");
+      /* request is not finish, cancel it to free it safely */
+      if (gai_cancel(reqs[0]) == EAI_NOTCANCELED)
+      {
+        while (gai_suspend ((const struct gaicb * const *) reqs, 1, NULL) != 0)
+          continue;
+      }
     }
+    else
+      mutt_debug(1, "getdnsdomainname fail: (%d) %s\n",
+                 status, gai_strerror(status));
+  }
+  FREE(&reqs[0]);
+
+#else /* !HAVE_GETADDRINFO_A */
+
+  getaddrinfo(node, NULL, &hints, &h);
+
+#endif
+
+  char *p;
+  if (h != NULL && h->ai_canonname && (p = strchr(h->ai_canonname, '.')))
+  {
+    strfcpy(d, ++p, len);
+    ret = 0;
+    mutt_debug (1, "getdnsdomainname(): %s\n", d);
     freeaddrinfo(h);
   }
-  FREE (&node);
-#endif
+
+#endif /* HAVE_GETADDRINFO || defined HAVE_GETADDRINFO_A */
 
   return ret;
 }
